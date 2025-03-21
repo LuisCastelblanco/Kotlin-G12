@@ -1,6 +1,7 @@
 package com.example.explorandes
 
 import android.os.Bundle
+import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -59,20 +60,20 @@ class HomeActivity : AppCompatActivity() {
         categoryServices.findViewById<TextView>(R.id.category_name).text = getString(R.string.services)
 
         // Set click listeners for categories
-        categoryBuildings.setOnClickListener { 
+        categoryBuildings.setOnClickListener {
             Toast.makeText(this, getString(R.string.buildings), Toast.LENGTH_SHORT).show()
         }
-        categoryEvents.setOnClickListener { 
+        categoryEvents.setOnClickListener {
             Toast.makeText(this, getString(R.string.events), Toast.LENGTH_SHORT).show()
         }
-        categoryFood.setOnClickListener { 
-            Toast.makeText(this, getString(R.string.food_rest), Toast.LENGTH_SHORT).show() 
+        categoryFood.setOnClickListener {
+            Toast.makeText(this, getString(R.string.food_rest), Toast.LENGTH_SHORT).show()
         }
-        categoryStudy.setOnClickListener { 
-            Toast.makeText(this, getString(R.string.study_spaces), Toast.LENGTH_SHORT).show() 
+        categoryStudy.setOnClickListener {
+            Toast.makeText(this, getString(R.string.study_spaces), Toast.LENGTH_SHORT).show()
         }
-        categoryServices.setOnClickListener { 
-            Toast.makeText(this, getString(R.string.services), Toast.LENGTH_SHORT).show() 
+        categoryServices.setOnClickListener {
+            Toast.makeText(this, getString(R.string.services), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -80,14 +81,14 @@ class HomeActivity : AppCompatActivity() {
         // Setup Buildings RecyclerView
         buildingsRecyclerView = findViewById(R.id.buildings_recycler)
         buildingsRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        
+
         // Create sample data for buildings
         val buildings = listOf(
             Building("1", "Bloque ML", "Faculty of Medicine", R.drawable.profile_placeholder),
             Building("2", "Bloque W", "Faculty of Engineering and Sciences", R.drawable.profile_placeholder),
             Building("3", "Bloque SC", "Student Center", R.drawable.profile_placeholder)
         )
-        
+
         val buildingAdapter = BuildingAdapter(buildings) { building ->
             Toast.makeText(this, "Selected: ${building.name}", Toast.LENGTH_SHORT).show()
         }
@@ -96,14 +97,14 @@ class HomeActivity : AppCompatActivity() {
         // Setup Recommendations RecyclerView
         recommendationsRecyclerView = findViewById(R.id.recommendations_recycler)
         recommendationsRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        
+
         // Create sample data for recommendations
         val recommendations = listOf(
             Recommendation("1", "Medium", "Anestesia Alberto López", R.drawable.profile_placeholder, RecommendationType.PODCAST),
             Recommendation("2", "CHOBA", "Audición Alberto López", R.drawable.profile_placeholder, RecommendationType.DOCUMENTARY),
             Recommendation("3", "C4", "Audición María Pérez", R.drawable.profile_placeholder, RecommendationType.THEATER)
         )
-        
+
         val recommendationAdapter = RecommendationAdapter(recommendations) { recommendation ->
             Toast.makeText(this, "Selected: ${recommendation.title}", Toast.LENGTH_SHORT).show()
         }
@@ -113,7 +114,7 @@ class HomeActivity : AppCompatActivity() {
     private fun setupBottomNavigation() {
         val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         bottomNavigation.selectedItemId = R.id.navigation_home
-        
+
         bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.navigation_home -> true
@@ -143,7 +144,7 @@ class HomeActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.see_all_buildings).setOnClickListener {
             Toast.makeText(this, "See all buildings", Toast.LENGTH_SHORT).show()
         }
-        
+
         findViewById<TextView>(R.id.see_all_recommendations).setOnClickListener {
             Toast.makeText(this, "See all recommendations", Toast.LENGTH_SHORT).show()
         }

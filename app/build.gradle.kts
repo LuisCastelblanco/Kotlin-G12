@@ -42,6 +42,30 @@ android {
 dependencies {
 
     implementation(libs.androidx.core.ktx)
+<<<<<<< Updated upstream
+=======
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.11.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("androidx.legacy:legacy-support-v4:1.0.0")
+
+    // RecyclerView
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+
+    // Google Maps
+    implementation ("com.google.android.gms:play-services-maps:18.2.0")
+    implementation ("com.google.android.gms:play-services-location:21.2.0")
+
+    // CardView
+    implementation("androidx.cardview:cardview:1.0.0")
+
+    // Circle ImageView for profile pictures
+    implementation("de.hdodenhof:circleimageview:3.1.0")
+
+    // Lifecycle components
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
+>>>>>>> Stashed changes
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))

@@ -107,11 +107,48 @@ fun LoginScreen() {
 
             Spacer(modifier = Modifier.height(8.dp))
             Button(
+<<<<<<< Updated upstream
                 onClick = { /* Acción de Login */ },
+=======
+                onClick = {
+                    // Launch HomeActivity with navigation flag
+                    val intent = Intent(context, HomeActivity::class.java).apply {
+                        // This will tell HomeActivity to open with the navigation tab selected
+                        putExtra("OPEN_NAVIGATION", true)
+                    }
+                    context.startActivity(intent)
+                    // Finish current activity if needed
+                    if (context is ComponentActivity) {
+                        context.finish()
+                    }
+                },
+>>>>>>> Stashed changes
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE91E63))
             ) {
                 Text("Sign In", color = Color.White)
             }
+<<<<<<< Updated upstream
+=======
+
+            // Skip login button for development
+            Spacer(modifier = Modifier.height(8.dp))
+            TextButton(
+                onClick = {
+                    // Launch HomeActivity with navigation flag
+                    val intent = Intent(context, HomeActivity::class.java).apply {
+                        // This will tell HomeActivity to open with the navigation tab selected
+                        putExtra("OPEN_NAVIGATION", true)
+                    }
+                    context.startActivity(intent)
+                    // Finish current activity if needed
+                    if (context is ComponentActivity) {
+                        context.finish()
+                    }
+                }
+            ) {
+                Text("Skip Login (Development Only)", color = Color.Gray)
+            }
+>>>>>>> Stashed changes
         }
     }
 }

@@ -139,8 +139,11 @@ fun LoginScreen(navController: NavHostController) {
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = {
-                    // Launch HomeActivity
-                    val intent = Intent(context, HomeActivity::class.java)
+                    // Launch HomeActivity with navigation flag
+                    val intent = Intent(context, HomeActivity::class.java).apply {
+                        // This will tell HomeActivity to open with the navigation tab selected
+                        putExtra("OPEN_NAVIGATION", true)
+                    }
                     context.startActivity(intent)
                     // Finish current activity if needed
                     if (context is ComponentActivity) {
@@ -156,8 +159,11 @@ fun LoginScreen(navController: NavHostController) {
             Spacer(modifier = Modifier.height(8.dp))
             TextButton(
                 onClick = {
-                    // Launch HomeActivity
-                    val intent = Intent(context, HomeActivity::class.java)
+                    // Launch HomeActivity with navigation flag
+                    val intent = Intent(context, HomeActivity::class.java).apply {
+                        // This will tell HomeActivity to open with the navigation tab selected
+                        putExtra("OPEN_NAVIGATION", true)
+                    }
                     context.startActivity(intent)
                     // Finish current activity if needed
                     if (context is ComponentActivity) {

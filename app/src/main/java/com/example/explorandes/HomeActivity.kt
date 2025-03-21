@@ -6,6 +6,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.NestedScrollView
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.explorandes.adapters.BuildingAdapter
@@ -13,22 +15,35 @@ import com.example.explorandes.adapters.RecommendationAdapter
 import com.example.explorandes.models.Building
 import com.example.explorandes.models.Recommendation
 import com.example.explorandes.models.RecommendationType
+import com.example.explorandes.ui.navigation.NavigationFragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class HomeActivity : AppCompatActivity() {
 
     private lateinit var buildingsRecyclerView: RecyclerView
     private lateinit var recommendationsRecyclerView: RecyclerView
+    private lateinit var nestedScrollView: NestedScrollView
+    private lateinit var fragmentContainer: View
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
+
+        // Find views needed for navigation
+        nestedScrollView = findViewById(R.id.nestedScrollView)
+        fragmentContainer = findViewById(R.id.fragment_container)
 
         // Setup UI components
         setupCategoryIcons()
         setupRecyclerViews()
         setupBottomNavigation()
         setupClickListeners()
+
+        // Check if we should open directly to the navigation tab
+        if (intent.getBooleanExtra("OPEN_NAVIGATION", false)) {
+            val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+            bottomNavigation.selectedItemId = R.id.navigation_navigate
+        }
     }
 
     private fun setupCategoryIcons() {
@@ -84,9 +99,9 @@ class HomeActivity : AppCompatActivity() {
 
         // Create sample data for buildings
         val buildings = listOf(
-            Building("1", "Bloque ML", "Faculty of Medicine", R.drawable.profile_placeholder),
-            Building("2", "Bloque W", "Faculty of Engineering and Sciences", R.drawable.profile_placeholder),
-            Building("3", "Bloque SC", "Student Center", R.drawable.profile_placeholder)
+            Building("1", "Bloque ML", "Faculty of Engineering", R.drawable.profile_placeholder),
+            Building("2", "Bloque W", "Faculty of Rights", R.drawable.profile_placeholder),
+            Building("3", "Bloque C", "Student Center", R.drawable.profile_placeholder)
         )
 
         val buildingAdapter = BuildingAdapter(buildings) { building ->
@@ -117,13 +132,16 @@ class HomeActivity : AppCompatActivity() {
 
         bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.navigation_home -> true
+                R.id.navigation_home -> {
+                    showHomeContent()
+                    true
+                }
                 R.id.navigation_favorites -> {
                     Toast.makeText(this, getString(R.string.favorites), Toast.LENGTH_SHORT).show()
                     true
                 }
                 R.id.navigation_navigate -> {
-                    Toast.makeText(this, getString(R.string.navigate), Toast.LENGTH_SHORT).show()
+                    loadFragment(NavigationFragment())
                     true
                 }
                 R.id.navigation_notifications -> {
@@ -148,5 +166,31 @@ class HomeActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.see_all_recommendations).setOnClickListener {
             Toast.makeText(this, "See all recommendations", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    // New methods for handling the navigation fragment
+    private fun showHomeContent() {
+        // Hide any fragments and show the main content
+        val fragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
+        if (fragment != null) {
+            supportFragmentManager.beginTransaction()
+                .remove(fragment)
+                .commit()
+        }
+
+        // Show the home content
+        nestedScrollView.visibility = View.VISIBLE
+        fragmentContainer.visibility = View.GONE
+    }
+
+    private fun loadFragment(fragment: Fragment) {
+        // Hide the home content
+        nestedScrollView.visibility = View.GONE
+        fragmentContainer.visibility = View.VISIBLE
+
+        // Load the fragment
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .commit()
     }
 }

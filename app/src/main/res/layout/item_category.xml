@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:gravity="center">
+    android:gravity="center"
+    android:padding="8dp">
 
     <androidx.cardview.widget.CardView
         android:layout_width="60dp"
@@ -23,7 +25,7 @@
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:layout_gravity="center"
-                android:src="@drawable/ic_building" />
+                tools:src="@drawable/ic_building" />
         </FrameLayout>
     </androidx.cardview.widget.CardView>
 
@@ -31,7 +33,7 @@
         android:id="@+id/category_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Buildings"
         android:textSize="12sp"
-        android:textColor="@android:color/black" />
+        android:textColor="@android:color/black"
+        tools:text="Laboratories" />
 </LinearLayout>

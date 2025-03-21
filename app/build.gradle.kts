@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("org.jetbrains.kotlin.plugin.compose") version "1.9.21" // Added Compose Compiler plugin
+    // We'll use the existing plugin version
 }
 
 android {
@@ -46,7 +46,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.7"
+        kotlinCompilerExtensionVersion = "2.0.0"  // Match the Kotlin version
     }
 
     packaging {

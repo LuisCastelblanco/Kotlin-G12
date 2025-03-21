@@ -2,6 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Add necessary permissions for location and maps -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -13,7 +19,15 @@
         android:theme="@style/Theme.ExplorAndes"
         tools:targetApi="31">
 
+<<<<<<< Updated upstream
         <!-- Splash Activity (Now the Launcher Activity) -->
+=======
+        <!-- Add Google Maps API key -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyA8JC9Rq6DveYWY4ylpomY5UOcxrd2qqak" />
+
+>>>>>>> Stashed changes
         <activity
             android:name=".SplashActivity"
             android:exported="true"

@@ -31,7 +31,7 @@
                 android:id="@+id/recommendation_type"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Podcast: \"Medium\""
+                android:text="Podcast: &quot;Medium&quot;"
                 android:textColor="@android:color/black"
                 android:textSize="14sp"
                 android:textStyle="bold" />

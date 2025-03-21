@@ -71,7 +71,7 @@ class LocationService(private val context: Context) {
         }
     }
 
-    // Calculate distance between user location and coordinates
+    // Calculate distance between user location and coordinates , HI COMMIT
     fun calculateDistance(userLat: Double, userLng: Double, destLat: Double, destLng: Double): Float {
         val results = FloatArray(1)
         Location.distanceBetween(userLat, userLng, destLat, destLng, results)

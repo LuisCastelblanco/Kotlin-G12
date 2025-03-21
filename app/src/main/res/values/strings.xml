@@ -1,3 +1,17 @@
 <resources>
     <string name="app_name">ExplorAndes</string>
+    <string name="hello_world">Hello World!</string>
+    <string name="search_hint">Where to go?</string>
+    <string name="buildings">Buildings</string>
+    <string name="events">Events</string>
+    <string name="food_rest">Food &amp; Rest</string>
+    <string name="study_spaces">Study Spaces</string>
+    <string name="services">Services</string>
+    <string name="recommendations">Recommendations</string>
+    <string name="see_all">See all</string>
+    <string name="home">Home</string>
+    <string name="favorites">Favorites</string>
+    <string name="navigate">Navigate</string>
+    <string name="notifications">Notifications</string>
+    <string name="account">Account</string>
 </resources>

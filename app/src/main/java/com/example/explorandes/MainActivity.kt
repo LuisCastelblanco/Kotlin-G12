@@ -1,18 +1,17 @@
 package com.example.explorandes
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,7 +47,6 @@ fun AppNavigator() {
         NavHost(navController = navController, startDestination = "home") {
             composable("home") { HomeScreen(navController) }
             composable("login") { LoginScreen(navController) }
-            composable("main_screen") { MainScreen(navController) }
         }
     }
 }
@@ -94,6 +92,9 @@ fun HomeScreen(navController: NavHostController) {
 
 @Composable
 fun LoginScreen(navController: NavHostController) {
+    // Get the context to launch intent
+    val context = LocalContext.current
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -137,7 +138,15 @@ fun LoginScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = { navController.navigate("main_screen") },
+                onClick = {
+                    // Launch HomeActivity
+                    val intent = Intent(context, HomeActivity::class.java)
+                    context.startActivity(intent)
+                    // Finish current activity if needed
+                    if (context is ComponentActivity) {
+                        context.finish()
+                    }
+                },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE91E63))
             ) {
                 Text("Sign In", color = Color.White)
@@ -145,102 +154,18 @@ fun LoginScreen(navController: NavHostController) {
 
             // Skip login button for development
             Spacer(modifier = Modifier.height(8.dp))
-            TextButton(onClick = { navController.navigate("main_screen") }) {
-                Text("Skip Login (Development Only)", color = Color.Gray)
-            }
-        }
-    }
-}
-
-@Composable
-fun MainScreen(navController: NavHostController) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF0A0F29)),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Top greeting
-            Text(
-                "Welcome to Explorandes",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier = Modifier.padding(top = 32.dp)
-            )
-
-            Text(
-                "Campus Explorer",
-                fontSize = 18.sp,
-                color = Color(0xFFE91E63),
-                modifier = Modifier.padding(bottom = 32.dp)
-            )
-
-            // Main content area - placeholder for your actual content
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                color = Color(0xFF1A1F39),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        "This is the main content area",
-                        fontSize = 18.sp,
-                        color = Color.White
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        "You've successfully bypassed the login screen",
-                        fontSize = 14.sp,
-                        color = Color.LightGray
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    Button(
-                        onClick = { navController.navigateUp() },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE91E63))
-                    ) {
-                        Text("Go Back", color = Color.White)
+            TextButton(
+                onClick = {
+                    // Launch HomeActivity
+                    val intent = Intent(context, HomeActivity::class.java)
+                    context.startActivity(intent)
+                    // Finish current activity if needed
+                    if (context is ComponentActivity) {
+                        context.finish()
                     }
                 }
-            }
-
-            // Bottom navigation placeholder
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp),
-                color = Color(0xFF1A1F39),
-                shape = RoundedCornerShape(16.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceAround
-                ) {
-                    Text("Home", color = Color(0xFFE91E63))
-                    Text("Explore", color = Color.White)
-                    Text("Map", color = Color.White)
-                    Text("Profile", color = Color.White)
-                }
+                Text("Skip Login (Development Only)", color = Color.Gray)
             }
         }
     }

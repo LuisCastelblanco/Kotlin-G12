@@ -2,13 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Add necessary permissions for location and maps -->
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-
-    <!-- Add necessary permissions for location and maps -->
+    <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -25,21 +19,10 @@
         android:theme="@style/Theme.ExplorAndes"
         tools:targetApi="31">
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-        <!-- Splash Activity (Now the Launcher Activity) -->
-=======
-=======
->>>>>>> Stashed changes
-        <!-- Add Google Maps API key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyA8JC9Rq6DveYWY4ylpomY5UOcxrd2qqak" />
+            android:value="@string/google_maps_key" />
 
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
         <activity
             android:name=".SplashActivity"
             android:exported="true"
@@ -50,15 +33,10 @@
             </intent-filter>
         </activity>
 
-        <!-- Main Activity (Starts after the Splash Screen) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.ExplorAndes"/>
-
+            android:theme="@style/Theme.ExplorAndes" />
     </application>
-
-
-
 </manifest>

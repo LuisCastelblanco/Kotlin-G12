@@ -29,16 +29,17 @@ Make sure you have the following installed:
 Clone the repository:
 ```bash
 git clone https://github.com/ISIS3510-G12-Kotlin/Kotlin-G12.git
-
+```
 Navigate to the project directory:
 ```bash
 cd Kotlin-G12
-
+```
 Open the project in Android Studio, let it sync and install the required dependencies.
 Then, run the app on an emulator or physical device:
 ```bash
 Run > Run 'app'
 ```
+
 Kotlin-G12
 ├─ .idea
 │  ├─ .name
@@ -156,3 +157,4 @@ Kotlin-G12
 ├─ gradle.properties
 ├─ gradlew
 └─ gradlew.bat
+

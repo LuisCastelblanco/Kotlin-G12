@@ -1,4 +1,5 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 # ISIS3510 - Kotlin App
 
 📌 **Project Description**  
@@ -40,6 +41,8 @@ Then, run the app on an emulator or physical device:
 ```bash
 Run > Run 'app'
 =======
+=======
+>>>>>>> Stashed changes
 
 ```
 Kotlin-G12
@@ -159,5 +162,8 @@ Kotlin-G12
 ├─ gradle.properties
 ├─ gradlew
 └─ gradlew.bat
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 

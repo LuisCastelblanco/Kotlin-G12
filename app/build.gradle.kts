@@ -67,6 +67,14 @@ dependencies {
     implementation ("com.google.android.gms:play-services-maps:18.2.0")
     implementation ("com.google.android.gms:play-services-location:21.2.0")
 
+    // Retrofit for API calls
+    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.02")
+    implementation ("com.squareup.okhttp3:logging-interceptor:4.9.1")
+
+    // Gson for JSON parsing
+    implementation ("com.google.code.gson:gson:2.9.0")
+
     // CardView
     implementation("androidx.cardview:cardview:1.0.0")
 

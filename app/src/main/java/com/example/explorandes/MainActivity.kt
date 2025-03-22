@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -20,8 +21,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.example.explorandes.services.BrightnessController
 import com.example.explorandes.services.LightSensorManager
+import com.example.explorandes.api.ApiClient
+import com.example.explorandes.models.AuthRequest
+import com.example.explorandes.utils.SessionManager
 
 class MainActivity : ComponentActivity() {
 

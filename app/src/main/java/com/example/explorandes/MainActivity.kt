@@ -122,6 +122,18 @@ fun HomeScreen(navController: NavHostController) {
 fun LoginScreen(navController: NavHostController) {
     // Get the context to launch intent
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    
+    // Create session manager
+    val sessionManager = remember { SessionManager(context) }
+    
+    // State for input fields
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    
+    // State for loading and error
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     Box(
         modifier = Modifier
@@ -129,7 +141,10 @@ fun LoginScreen(navController: NavHostController) {
             .background(Color(0xFF0A0F29)),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(16.dp)
+        ) {
             Text(
                 text = "Find Your Way Around",
                 fontSize = 24.sp,
@@ -141,9 +156,10 @@ fun LoginScreen(navController: NavHostController) {
 
             // Input fields
             TextField(
-                value = "",
-                onValueChange = {},
-                placeholder = { Text("Email or Phone Number") },
+                value = email,
+                onValueChange = { email = it },
+                placeholder = { Text("Email") },
+                modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = Color(0xFF1A1F39),
                     focusedContainerColor = Color(0xFF1A1F39),
@@ -153,9 +169,11 @@ fun LoginScreen(navController: NavHostController) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             TextField(
-                value = "",
-                onValueChange = {},
+                value = password,
+                onValueChange = { password = it },
                 placeholder = { Text("Password") },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = Color(0xFF1A1F39),
                     focusedContainerColor = Color(0xFF1A1F39),
@@ -164,34 +182,70 @@ fun LoginScreen(navController: NavHostController) {
                 )
             )
 
+            // Display error message if any
+            errorMessage?.let {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = it,
+                    color = Color.Red,
+                    fontSize = 14.sp
+                )
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = {
-                    // Launch HomeActivity with navigation flag
-                    val intent = Intent(context, HomeActivity::class.java).apply {
-                        // This will tell HomeActivity to open with the navigation tab selected
-                        putExtra("OPEN_NAVIGATION", true)
-                    }
-                    context.startActivity(intent)
-                    // Finish current activity if needed
-                    if (context is ComponentActivity) {
-                        context.finish()
+                    // Validate inputs
+                    when {
+                        email.isEmpty() -> errorMessage = "Email is required"
+                        password.isEmpty() -> errorMessage = "Password is required"
+                        else -> {
+                            // Clear previous error
+                            errorMessage = null
+                            isLoading = true
+                            
+                            // Perform login
+                            scope.launch {
+                                try {
+                                    val response = ApiClient.apiService.login(AuthRequest(email, password))
+                                    // Save token
+                                    sessionManager.saveAuthToken(response.token)
+                                    
+                                    // Navigate to home
+                                    val intent = Intent(context, HomeActivity::class.java)
+                                    context.startActivity(intent)
+                                    // Finish current activity if needed
+                                    if (context is ComponentActivity) {
+                                        context.finish()
+                                    }
+                                } catch (e: Exception) {
+                                    errorMessage = "Login failed: ${e.localizedMessage}"
+                                } finally {
+                                    isLoading = false
+                                }
+                            }
+                        }
                     }
                 },
+                enabled = !isLoading,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE91E63))
             ) {
-                Text("Sign In", color = Color.White)
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.White
+                    )
+                } else {
+                    Text("Sign In", color = Color.White)
+                }
             }
 
             // Skip login button for development
             Spacer(modifier = Modifier.height(8.dp))
             TextButton(
                 onClick = {
-                    // Launch HomeActivity with navigation flag
-                    val intent = Intent(context, HomeActivity::class.java).apply {
-                        // This will tell HomeActivity to open with the navigation tab selected
-                        putExtra("OPEN_NAVIGATION", true)
-                    }
+                    // Launch HomeActivity
+                    val intent = Intent(context, HomeActivity::class.java)
                     context.startActivity(intent)
                     // Finish current activity if needed
                     if (context is ComponentActivity) {

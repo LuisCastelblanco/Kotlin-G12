@@ -15,6 +15,7 @@ import com.example.explorandes.adapters.RecommendationAdapter
 import com.example.explorandes.models.Building
 import com.example.explorandes.models.Recommendation
 import com.example.explorandes.models.RecommendationType
+import com.example.explorandes.ui.account.AccountFragment  
 import com.example.explorandes.ui.navigation.NavigationFragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
@@ -149,7 +150,7 @@ class HomeActivity : AppCompatActivity() {
                     true
                 }
                 R.id.navigation_account -> {
-                    Toast.makeText(this, getString(R.string.account), Toast.LENGTH_SHORT).show()
+                    loadFragment(AccountFragment())
                     true
                 }
                 else -> false

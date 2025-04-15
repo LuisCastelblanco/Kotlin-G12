@@ -10,10 +10,14 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.example.explorandes.MainActivity
 import com.example.explorandes.R
+import com.example.explorandes.api.ApiClient
 import com.example.explorandes.models.User
 import com.example.explorandes.utils.SessionManager
+import kotlinx.coroutines.launch
+import com.bumptech.glide.Glide
 
 class AccountFragment : Fragment() {
     
@@ -24,16 +28,10 @@ class AccountFragment : Fragment() {
     private lateinit var languageOption: LinearLayout
     private lateinit var notificationsOption: LinearLayout
     private lateinit var signOutOption: LinearLayout
+    private lateinit var loadingView: View
     
-    // Mock user data
-    private val currentUser = User(
-        id = "1",
-        firstName = "Luis Alfredo",
-        lastName = "Castelblanco",
-        email = "la.castelblanco@uniandes.edu.co",
-        profileImageUrl = null,
-        role = "Student"
-    )
+    private lateinit var sessionManager: SessionManager
+    private var currentUser: User? = null
     
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -41,6 +39,9 @@ class AccountFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_account, container, false)
+        
+        // Inicializar SessionManager
+        sessionManager = SessionManager(requireContext())
         
         // Initialize views
         profileImage = view.findViewById(R.id.profileImage)
@@ -50,17 +51,86 @@ class AccountFragment : Fragment() {
         languageOption = view.findViewById(R.id.languageOption)
         notificationsOption = view.findViewById(R.id.notificationsOption)
         signOutOption = view.findViewById(R.id.signOutOption)
+        loadingView = view.findViewById(R.id.loadingView)
         
-        setupUI()
+        // Cargar datos del usuario
+        loadUserData()
+        
+        // Configurar listeners
+        setupClickListeners()
+        
         return view
     }
     
-    private fun setupUI() {
-        // Set user data
-        userName.text = "${currentUser.firstName} ${currentUser.lastName}"
-        userRole.text = currentUser.role
+    private fun loadUserData() {
+        showLoading(true)
         
-        // Set click listeners
+        // Obtener ID del usuario desde SessionManager
+        val userId = sessionManager.getUserId()
+        
+        if (userId <= 0) {
+            // No hay usuario logueado, redirigir a login
+            Toast.makeText(requireContext(), "No se encontró información de usuario", Toast.LENGTH_SHORT).show()
+            navigateToLogin()
+            return
+        }
+        
+        // Obtener datos del usuario desde el backend
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = ApiClient.apiService.getUserById(userId)
+                
+                if (response.isSuccessful && response.body() != null) {
+                    currentUser = response.body()
+                    updateUI()
+                } else {
+                    // Error al obtener los datos del usuario
+                    Toast.makeText(requireContext(), "Error al cargar el perfil: ${response.code()}", Toast.LENGTH_SHORT).show()
+                    if (response.code() == 401) {
+                        // Token inválido o expirado
+                        sessionManager.logout()
+                        navigateToLogin()
+                    }
+                }
+            } catch (e: Exception) {
+                // Error de conexión
+                Toast.makeText(requireContext(), "Error de conexión: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                showLoading(false)
+            }
+        }
+    }
+    
+    private fun updateUI() {
+        currentUser?.let { user ->
+            // Construir nombre completo
+            val displayName = if (!user.firstName.isNullOrEmpty() || !user.lastName.isNullOrEmpty()) {
+                val firstName = user.firstName ?: ""
+                val lastName = user.lastName ?: ""
+                "$firstName $lastName".trim()
+            } else {
+                user.username
+            }
+            
+            userName.text = displayName
+            userRole.text = "Estudiante" // Valor por defecto
+            
+            // Cargar imagen de perfil si existe
+            if (!user.profileImageUrl.isNullOrEmpty()) {
+                Glide.with(requireContext())
+                    .load(user.profileImageUrl)
+                    .circleCrop()
+                    .placeholder(R.drawable.profile_placeholder)
+                    .error(R.drawable.profile_placeholder)
+                    .into(profileImage)
+            } else {
+                // Si no hay imagen de perfil, usar imagen predeterminada
+                profileImage.setImageResource(R.drawable.profile_placeholder)
+            }
+        }
+    }
+    
+    private fun setupClickListeners() {
         editProfileOption.setOnClickListener {
             navigateToEditProfile()
         }
@@ -79,12 +149,14 @@ class AccountFragment : Fragment() {
     }
     
     private fun navigateToEditProfile() {
-        val fragment = EditProfileFragment()
-        fragment.setUser(currentUser)
-        parentFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, fragment)
-            .addToBackStack(null)
-            .commit()
+        currentUser?.let { user ->
+            val fragment = EditProfileFragment()
+            fragment.setUser(user)
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .addToBackStack(null)
+                .commit()
+        } ?: Toast.makeText(requireContext(), "Información de usuario no disponible", Toast.LENGTH_SHORT).show()
     }
     
     private fun navigateToLanguageSettings() {
@@ -105,13 +177,20 @@ class AccountFragment : Fragment() {
     
     private fun signOut() {
         // Clear session
-        val sessionManager = SessionManager(requireContext())
-        sessionManager.clearAuthToken()
+        sessionManager.logout()
         
         // Navigate to login screen
+        navigateToLogin()
+    }
+    
+    private fun navigateToLogin() {
         val intent = Intent(requireContext(), MainActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         requireActivity().finish()
+    }
+    
+    private fun showLoading(isLoading: Boolean) {
+        loadingView.visibility = if (isLoading) View.VISIBLE else View.GONE
     }
 }

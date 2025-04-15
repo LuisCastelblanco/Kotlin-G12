@@ -2,6 +2,7 @@ package com.example.explorandes.utils
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 
 class SessionManager(context: Context) {
     private var prefs: SharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
@@ -19,6 +20,7 @@ class SessionManager(context: Context) {
         val editor = prefs.edit()
         editor.putString(USER_TOKEN, token)
         editor.apply()
+        Log.d("SessionManager", "Token guardado: $token")
     }
     
     // Obtener token JWT
@@ -28,6 +30,7 @@ class SessionManager(context: Context) {
     
     // Guardar datos básicos del usuario
     fun saveUserInfo(id: Long, email: String, name: String) {
+        Log.d("SessionManager", "Guardando info de usuario: ID=$id, Email=$email, Name=$name")
         val editor = prefs.edit()
         editor.putLong(USER_ID, id)
         editor.putString(USER_EMAIL, email)
@@ -40,13 +43,19 @@ class SessionManager(context: Context) {
         return prefs.getLong(USER_ID, -1)
     }
     
-    // Verificar si el usuario está logueado
     fun isLoggedIn(): Boolean {
-        return getToken() != null
+        val token = getToken()
+        val userId = getUserId()
+        val hasToken = !token.isNullOrEmpty()
+        val hasUserId = userId > 0
+        
+        Log.d("SessionManager", "isLoggedIn: Token=${hasToken}, UserId=${hasUserId}")
+        
+        return hasToken && hasUserId
     }
     
-    // Cerrar sesión - eliminar todos los datos guardados
     fun logout() {
+        Log.d("SessionManager", "Cerrando sesión y eliminando datos")
         val editor = prefs.edit()
         editor.clear()
         editor.apply()

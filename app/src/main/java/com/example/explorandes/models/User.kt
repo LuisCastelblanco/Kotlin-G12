@@ -1,15 +1,15 @@
 package com.example.explorandes.models
 
-import java.time.LocalDateTime
+import com.google.gson.annotations.SerializedName
 
 data class User(
-    val id: Long = 0,
-    val username: String,
-    val email: String,
-    val password: String? = null,
-    val firstName: String? = null,
-    val lastName: String? = null,
-    val createdAt: String? = null,
-    val updatedAt: String? = null
-
+    @SerializedName("id") val id: Long = 0,
+    @SerializedName("username") val username: String = "",
+    @SerializedName("email") val email: String = "",
+    @SerializedName("password") val password: String? = null,
+    @SerializedName("firstName") val firstName: String? = null,
+    @SerializedName("lastName") val lastName: String? = null,
+    @SerializedName("profileImageUrl") val profileImageUrl: String? = null,
+    @SerializedName("createdAt") val createdAt: String? = null,
+    @SerializedName("updatedAt") val updatedAt: String? = null
 )

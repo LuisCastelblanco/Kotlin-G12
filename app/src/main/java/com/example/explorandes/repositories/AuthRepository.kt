@@ -3,20 +3,22 @@ package com.example.explorandes.repositories
 import com.example.explorandes.api.ApiClient
 import com.example.explorandes.models.AuthRequest
 import com.example.explorandes.models.AuthResponse
+import com.example.explorandes.models.RegisterRequest
 import com.example.explorandes.models.User
 import com.example.explorandes.utils.SessionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import retrofit2.Response
 
 class AuthRepository(private val sessionManager: SessionManager) {
     private val apiService = ApiClient.apiService
-    
+
     suspend fun login(email: String, password: String): Result<AuthResponse> {
         return withContext(Dispatchers.IO) {
             try {
-                val authRequest = AuthRequest(email, password)
+                val authRequest = AuthRequest(email = email, password = password)
                 val response = apiService.login(authRequest)
-                
+
                 if (response.isSuccessful) {
                     response.body()?.let { authResponse ->
                         // Guardar el token en SessionManager
@@ -31,12 +33,21 @@ class AuthRepository(private val sessionManager: SessionManager) {
             }
         }
     }
-    
-    suspend fun register(user: User): Result<AuthResponse> {
+
+    suspend fun register(username: String, email: String, password: String, firstName: String? = null, lastName: String? = null): Result<AuthResponse> {
         return withContext(Dispatchers.IO) {
             try {
-                val response = apiService.register(user)
-                
+                // Usar RegisterRequest en lugar de User
+                val registerRequest = RegisterRequest(
+                    username = username,
+                    email = email,
+                    password = password,
+                    firstName = firstName,
+                    lastName = lastName
+                )
+
+                val response = apiService.register(registerRequest)
+
                 if (response.isSuccessful) {
                     response.body()?.let { authResponse ->
                         // Guardar el token en SessionManager

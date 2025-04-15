@@ -1,10 +1,15 @@
 package com.example.explorandes.models
 
+import java.time.LocalDateTime
+
 data class User(
-    val id: String,
-    val firstName: String,
-    val lastName: String,
+    val id: Long = 0,
+    val username: String,
     val email: String,
-    val profileImageUrl: String? = null,
-    val role: String = "Student"
+    val password: String? = null,
+    val firstName: String? = null,
+    val lastName: String? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null
+
 )

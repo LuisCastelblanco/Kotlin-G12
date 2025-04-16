@@ -34,7 +34,7 @@
         android:layout_marginStart="8dp"
         android:padding="12dp"
         android:src="@drawable/ic_navigate"
-        app:tint="@android:color/white"
+        android:tint="@android:color/white"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="@id/headerTitle" />
@@ -45,7 +45,10 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:visibility="gone"
-        android:layout_marginTop="16dp" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Edit Profile Content -->
     <androidx.cardview.widget.CardView
@@ -115,7 +118,6 @@
                 android:background="@color/light_gray"
                 android:hint="First Name"
                 android:padding="12dp"
-                android:text="Juan David"
                 android:textSize="14sp" />
 
             <!-- Last Name -->
@@ -134,7 +136,6 @@
                 android:background="@color/light_gray"
                 android:hint="Last Name"
                 android:padding="12dp"
-                android:text="Rios"
                 android:textSize="14sp" />
 
             <!-- Email -->
@@ -154,80 +155,13 @@
                 android:enabled="false"
                 android:hint="Email"
                 android:padding="12dp"
-                android:text="jd.rios05@uniandes.edu.co"
                 android:textSize="14sp" />
-
-            <!-- Social Media -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="0dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <LinearLayout
-                        android:id="@+id/googleAccountOption"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_margin="4dp"
-                        android:background="@drawable/circular_background"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_account" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="12dp"
-                            android:layout_weight="1"
-                            android:text="Remove Google Account"
-                            android:textColor="@android:color/black" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/facebookOption"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_margin="4dp"
-                        android:background="@drawable/circular_background"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_account"
-                            app:tint="#4267B2" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="12dp"
-                            android:layout_weight="1"
-                            android:text="Connect Facebook"
-                            android:textColor="@android:color/black" />
-                    </LinearLayout>
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
 
             <!-- Action Buttons -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="32dp"
                 android:orientation="horizontal">
 
                 <Button

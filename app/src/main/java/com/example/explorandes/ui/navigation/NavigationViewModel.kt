@@ -21,18 +21,19 @@ class NavigationViewModel : ViewModel() {
     
     // Mock data using existing drawable resources
     private val allPlaces = listOf(
-        Place(1, "CupiTaller", "ML-501", "Laboratories", "50m", "7.38, -72.37", R.drawable.ic_building),
-        Place(2, "Laboratorio Colivri", "ML-301", "Laboratories", "100m", "7.39, -72.38", R.drawable.ic_building),
-        Place(3, "Waira", "ML-701", "Stores", "150m", "7.40, -72.39", R.drawable.ic_food),
-        Place(4, "Computer Lab", "ML-101", "Computer Labs", "75m", "7.37, -72.36", R.drawable.ic_services),
-        Place(5, "Auditorium", "ML-201", "Auditoriums", "200m", "7.41, -72.40", R.drawable.ic_study)
-    )
+        Place(1, "Bloque Monitos", "Monitos", "Stores", "50m", "4.603923, -74.065941", R.drawable.ic_building),
+        Place(2, "Laboratorio Colivri", "ML-301", "Laboratories", "100m", "4.602887556659316, -74.06498980177271", R.drawable.ic_building),
+        Place(3, "Auditorio Mario LaSerna", "ML-201", "Auditoriums", "200m", "4.602497035525785, -74.06473068498846", R.drawable.ic_study),
+        Place(4, "Waira", "ML-701", "Stores", "150m", "7.40, -72.39", R.drawable.ic_food),
+        Place(5, "Computer Lab", "ML-101", "Computer Labs", "75m", "7.37, -72.36", R.drawable.ic_services),
+            )
     
     private val allCategories = listOf(
         Category(1, "Laboratories", R.drawable.ic_building),
         Category(2, "Auditoriums", R.drawable.ic_study),
         Category(3, "Stores", R.drawable.ic_food),
         Category(4, "Computer Labs", R.drawable.ic_services)
+
     )
     
     init {

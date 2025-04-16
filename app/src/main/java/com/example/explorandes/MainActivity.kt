@@ -2,10 +2,13 @@ package com.example.explorandes
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,6 +29,7 @@ import com.example.explorandes.services.BrightnessController
 import com.example.explorandes.services.LightSensorManager
 import com.example.explorandes.api.ApiClient
 import com.example.explorandes.models.AuthRequest
+import com.example.explorandes.models.RegisterRequest
 import com.example.explorandes.utils.SessionManager
 
 class MainActivity : ComponentActivity() {
@@ -34,6 +38,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Inicializar ApiClient con el contexto
+        ApiClient.init(applicationContext)
+        
         setContent {
             AppNavigator()
         }
@@ -68,10 +76,35 @@ class MainActivity : ComponentActivity() {
 fun AppNavigator() {
     val navController = rememberNavController()
     var showSplash by remember { mutableStateOf(true) }
-
+    
+    // Check if user is already logged in
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
+    
     LaunchedEffect(Unit) {
         delay(2000) // Wait 2 seconds
         showSplash = false
+        
+        // Modificamos la verificación para asegurar que tenemos tanto token como info de usuario
+        val hasToken = sessionManager.getToken() != null
+        val hasUserId = sessionManager.getUserId() > 0
+        
+        Log.d("AppNavigator", "Verificando login - Token: $hasToken, UserId: $hasUserId")
+        
+        if (hasToken && hasUserId) {
+            // Usuario completamente autenticado
+            Log.d("AppNavigator", "Usuario autenticado, navegando a HomeActivity")
+            val intent = Intent(context, HomeActivity::class.java)
+            context.startActivity(intent)
+            if (context is ComponentActivity) {
+                context.finish()
+            }
+        } else if (hasToken && !hasUserId) {
+            // Tiene token pero falta info de usuario - limpiar sesión
+            Log.d("AppNavigator", "Token encontrado pero sin ID de usuario. Limpiando sesión.")
+            sessionManager.logout()
+        }
+        // Si no tiene token ni userID, se queda en la pantalla de login/registro
     }
 
     if (showSplash) {
@@ -80,6 +113,7 @@ fun AppNavigator() {
         NavHost(navController = navController, startDestination = "home") {
             composable("home") { HomeScreen(navController) }
             composable("login") { LoginScreen(navController) }
+            composable("register") { RegisterScreen(navController) }
         }
     }
 }
@@ -117,7 +151,14 @@ fun HomeScreen(navController: NavHostController) {
                 onClick = { navController.navigate("login") },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE91E63))
             ) {
-                Text("Start Exploring", color = Color.White)
+                Text("Sign In", color = Color.White)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = { navController.navigate("register") },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3949AB))
+            ) {
+                Text("Create Account", color = Color.White)
             }
         }
     }
@@ -151,12 +192,12 @@ fun LoginScreen(navController: NavHostController) {
             modifier = Modifier.padding(16.dp)
         ) {
             Text(
-                text = "Find Your Way Around",
+                text = "Sign In",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFFE91E63)
             )
-            Text("Your interactive campus map at a glance", fontSize = 16.sp, color = Color.White)
+            Text("Find your way around campus", fontSize = 16.sp, color = Color.White)
             Spacer(modifier = Modifier.height(16.dp))
 
             // Input fields
@@ -212,19 +253,47 @@ fun LoginScreen(navController: NavHostController) {
                             // Perform login
                             scope.launch {
                                 try {
-                                    val response = ApiClient.apiService.login(AuthRequest(email, password))
-                                    // Save token
-                                    sessionManager.saveAuthToken(response.token)
+                                    val response = ApiClient.apiService.login(AuthRequest(email = email, password = password))
                                     
-                                    // Navigate to home
-                                    val intent = Intent(context, HomeActivity::class.java)
-                                    context.startActivity(intent)
-                                    // Finish current activity if needed
-                                    if (context is ComponentActivity) {
-                                        context.finish()
+                                    if (response.isSuccessful && response.body() != null) {
+                                        // Save token and user info
+                                        response.body()?.let { authResponse ->
+                                            Log.d("LoginScreen", "Login exitoso: ${authResponse.token}")
+                                            
+                                            // Guardar token
+                                            sessionManager.saveToken(authResponse.token)
+                                            
+                                            // Guardar información del usuario
+                                            authResponse.user?.let { user ->
+                                                Log.d("LoginScreen", "Usuario recibido: ${user.id}, ${user.email}, ${user.username}")
+                                                sessionManager.saveUserInfo(user.id, user.email, user.username)
+                                                
+                                                // Verificar que se guardó correctamente
+                                                if (sessionManager.getUserId() > 0) {
+                                                    // Navigate to home
+                                                    val intent = Intent(context, HomeActivity::class.java)
+                                                    context.startActivity(intent)
+                                                    // Finish current activity if needed
+                                                    if (context is ComponentActivity) {
+                                                        context.finish()
+                                                    }
+                                                } else {
+                                                    errorMessage = "Error al guardar datos de usuario"
+                                                }
+                                            } ?: run {
+                                                errorMessage = "No se recibieron datos de usuario en la respuesta"
+                                                Log.e("LoginScreen", "No hay datos de usuario en la respuesta")
+                                                // Eliminamos el token ya que no tenemos datos completos
+                                                sessionManager.logout()
+                                            }
+                                        }
+                                    } else {
+                                        errorMessage = "Login failed: ${response.code()} - ${response.errorBody()?.string()}"
+                                        Log.e("LoginScreen", "Error en login: ${response.code()}")
                                     }
                                 } catch (e: Exception) {
                                     errorMessage = "Login failed: ${e.localizedMessage}"
+                                    Log.e("LoginScreen", "Excepción en login: ${e.message}", e)
                                 } finally {
                                     isLoading = false
                                 }
@@ -233,6 +302,7 @@ fun LoginScreen(navController: NavHostController) {
                     }
                 },
                 enabled = !isLoading,
+                modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE91E63))
             ) {
                 if (isLoading) {
@@ -243,6 +313,13 @@ fun LoginScreen(navController: NavHostController) {
                 } else {
                     Text("Sign In", color = Color.White)
                 }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            TextButton(
+                onClick = { navController.navigate("register") }
+            ) {
+                Text("Don't have an account? Sign Up", color = Color(0xFFE91E63))
             }
 
             // Skip login button for development
@@ -259,6 +336,246 @@ fun LoginScreen(navController: NavHostController) {
                 }
             ) {
                 Text("Skip Login (Development Only)", color = Color.Gray)
+            }
+        }
+    }
+}
+
+@Composable
+fun RegisterScreen(navController: NavHostController) {
+    // Get the context to launch intent
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    
+    // Create session manager
+    val sessionManager = remember { SessionManager(context) }
+    
+    // State for input fields
+    var username by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var firstName by remember { mutableStateOf("") }
+    var lastName by remember { mutableStateOf("") }
+    
+    // State for loading and error
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF0A0F29)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+        ) {
+            Text(
+                text = "Create Account",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF3949AB)
+            )
+            Text("Join the ExplorAndes community", fontSize = 16.sp, color = Color.White)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Input fields
+            TextField(
+                value = username,
+                onValueChange = { username = it },
+                placeholder = { Text("Username") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = Color(0xFF1A1F39),
+                    focusedContainerColor = Color(0xFF1A1F39),
+                    unfocusedTextColor = Color.White,
+                    focusedTextColor = Color.White
+                )
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            TextField(
+                value = email,
+                onValueChange = { email = it },
+                placeholder = { Text("Email") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = Color(0xFF1A1F39),
+                    focusedContainerColor = Color(0xFF1A1F39),
+                    unfocusedTextColor = Color.White,
+                    focusedTextColor = Color.White
+                )
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            TextField(
+                value = firstName,
+                onValueChange = { firstName = it },
+                placeholder = { Text("First Name (Optional)") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = Color(0xFF1A1F39),
+                    focusedContainerColor = Color(0xFF1A1F39),
+                    unfocusedTextColor = Color.White,
+                    focusedTextColor = Color.White
+                )
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            TextField(
+                value = lastName,
+                onValueChange = { lastName = it },
+                placeholder = { Text("Last Name (Optional)") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = Color(0xFF1A1F39),
+                    focusedContainerColor = Color(0xFF1A1F39),
+                    unfocusedTextColor = Color.White,
+                    focusedTextColor = Color.White
+                )
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            TextField(
+                value = password,
+                onValueChange = { password = it },
+                placeholder = { Text("Password") },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = Color(0xFF1A1F39),
+                    focusedContainerColor = Color(0xFF1A1F39),
+                    unfocusedTextColor = Color.White,
+                    focusedTextColor = Color.White
+                )
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            TextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                placeholder = { Text("Confirm Password") },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = Color(0xFF1A1F39),
+                    focusedContainerColor = Color(0xFF1A1F39),
+                    unfocusedTextColor = Color.White,
+                    focusedTextColor = Color.White
+                )
+            )
+
+            // Display error message if any
+            errorMessage?.let {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = it,
+                    color = Color.Red,
+                    fontSize = 14.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = {
+                    // Validate inputs
+                    when {
+                        username.isEmpty() -> errorMessage = "Username is required"
+                        email.isEmpty() -> errorMessage = "Email is required"
+                        !email.contains("@") -> errorMessage = "Please enter a valid email"
+                        password.isEmpty() -> errorMessage = "Password is required"
+                        password.length < 6 -> errorMessage = "Password must be at least 6 characters"
+                        password != confirmPassword -> errorMessage = "Passwords don't match"
+                        else -> {
+                            // Clear previous error
+                            errorMessage = null
+                            isLoading = true
+                            
+                            // Create register request object
+                            val registerRequest = RegisterRequest(
+                                username = username,
+                                email = email,
+                                password = password,
+                                firstName = firstName.takeIf { it.isNotEmpty() },
+                                lastName = lastName.takeIf { it.isNotEmpty() }
+                            )
+                            
+                            // Perform registration
+                            scope.launch {
+                                try {
+                                    Log.d("RegisterScreen", "Enviando solicitud de registro: $registerRequest")
+                                    val response = ApiClient.apiService.register(registerRequest)
+                                    
+                                    if (response.isSuccessful && response.body() != null) {
+                                        // Save token from response
+                                        response.body()?.let { authResponse ->
+                                            Log.d("RegisterScreen", "Registro exitoso: ${authResponse.token}")
+                                            
+                                            // Guardar token
+                                            sessionManager.saveToken(authResponse.token)
+                                            
+                                            // Guardar información del usuario
+                                            authResponse.user?.let { user ->
+                                                Log.d("RegisterScreen", "Usuario recibido: ${user.id}, ${user.email}, ${user.username}")
+                                                sessionManager.saveUserInfo(user.id, user.email, user.username)
+                                                
+                                                // Verificar que se guardó correctamente
+                                                if (sessionManager.getUserId() > 0) {
+                                                    // Navigate to home
+                                                    val intent = Intent(context, HomeActivity::class.java)
+                                                    context.startActivity(intent)
+                                                    // Finish current activity if needed
+                                                    if (context is ComponentActivity) {
+                                                        context.finish()
+                                                    }
+                                                } else {
+                                                    errorMessage = "Error al guardar datos de usuario"
+                                                }
+                                            } ?: run {
+                                                errorMessage = "No se recibieron datos de usuario en la respuesta"
+                                                Log.e("RegisterScreen", "No hay datos de usuario en la respuesta")
+                                                // Eliminamos el token ya que no tenemos datos completos
+                                                sessionManager.logout()
+                                            }
+                                        }
+                                    } else {
+                                        errorMessage = "Registration failed: ${response.code()} - ${response.errorBody()?.string()}"
+                                        Log.e("RegisterScreen", "Error en registro: ${response.code()}")
+                                    }
+                                } catch (e: Exception) {
+                                    errorMessage = "Registration failed: ${e.localizedMessage}"
+                                    Log.e("RegisterScreen", "Excepción en registro: ${e.message}", e)
+                                } finally {
+                                    isLoading = false
+                                }
+                            }
+                        }
+                    }
+                },
+                enabled = !isLoading,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3949AB))
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.White
+                    )
+                } else {
+                    Text("Create Account", color = Color.White)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            TextButton(
+                onClick = { navController.navigate("login") }
+            ) {
+                Text("Already have an account? Sign In", color = Color(0xFFE91E63))
             }
         }
     }

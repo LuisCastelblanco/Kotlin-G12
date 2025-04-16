@@ -40,6 +40,7 @@ Then, run the app on an emulator or physical device:
 Run > Run 'app'
 ```
 
+
 ```
 Kotlin-G12
 ├─ .idea
@@ -59,6 +60,8 @@ Kotlin-G12
 │  ├─ runConfigurations.xml
 │  └─ vcs.xml
 ├─ .kotlin
+│  ├─ errors
+│  │  └─ errors-1743545729263.log
 │  └─ sessions
 ├─ app
 │  ├─ proguard-rules.pro
@@ -80,27 +83,44 @@ Kotlin-G12
 │     │  │           │  ├─ CategoriesAdapter.kt
 │     │  │           │  ├─ PlacesAdapter.kt
 │     │  │           │  └─ RecommendationAdapter.kt
+│     │  │           ├─ api
+│     │  │           │  ├─ ApiClient.kt
+│     │  │           │  ├─ ApiService.kt
+│     │  │           │  └─ AuthInterceptor.kt
 │     │  │           ├─ HomeActivity.kt
 │     │  │           ├─ MainActivity.kt
 │     │  │           ├─ models
+│     │  │           │  ├─ AuthRequest.kt
+│     │  │           │  ├─ AuthResponse.kt
 │     │  │           │  ├─ Building.kt
 │     │  │           │  ├─ Category.kt
 │     │  │           │  ├─ Place.kt
 │     │  │           │  ├─ Recommendation.kt
+│     │  │           │  ├─ User.kt
 │     │  │           │  └─ UserLocation.kt
 │     │  │           ├─ repositories
+│     │  │           │  ├─ AuthRepository.kt
 │     │  │           │  └─ PlaceRepository.kt
 │     │  │           ├─ services
+│     │  │           │  ├─ BrightnessController.kt
+│     │  │           │  ├─ LightSensorManager.kt
 │     │  │           │  └─ LocationService.kt
 │     │  │           ├─ SplashActivity.kt
-│     │  │           └─ ui
-│     │  │              ├─ navigation
-│     │  │              │  ├─ NavigationFragment.kt
-│     │  │              │  └─ NavigationViewModel.kt
-│     │  │              └─ theme
-│     │  │                 ├─ Color.kt
-│     │  │                 ├─ Theme.kt
-│     │  │                 └─ Type.kt
+│     │  │           ├─ ui
+│     │  │           │  ├─ account
+│     │  │           │  │  ├─ AccountFragment.kt
+│     │  │           │  │  ├─ EditProfileFragment.kt
+│     │  │           │  │  ├─ LanguageFragment.kt
+│     │  │           │  │  └─ NotificationsFragment.kt
+│     │  │           │  ├─ navigation
+│     │  │           │  │  ├─ NavigationFragment.kt
+│     │  │           │  │  └─ NavigationViewModel.kt
+│     │  │           │  └─ theme
+│     │  │           │     ├─ Color.kt
+│     │  │           │     ├─ Theme.kt
+│     │  │           │     └─ Type.kt
+│     │  │           └─ utils
+│     │  │              └─ SessionManager.kt
 │     │  └─ res
 │     │     ├─ drawable
 │     │     │  ├─ circular_background.xml
@@ -124,7 +144,11 @@ Kotlin-G12
 │     │     ├─ layout
 │     │     │  ├─ activity_home.xml
 │     │     │  ├─ activity_splash.xml
+│     │     │  ├─ fragment_account.xml
+│     │     │  ├─ fragment_edit_profile.xml
+│     │     │  ├─ fragment_language.xml
 │     │     │  ├─ fragment_navigation.xml
+│     │     │  ├─ fragment_notifications.xml
 │     │     │  ├─ item_building.xml
 │     │     │  ├─ item_category.xml
 │     │     │  ├─ item_place.xml

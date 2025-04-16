@@ -2,40 +2,62 @@ package com.example.explorandes.utils
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 
-/**
- * Session manager to save and fetch authentication token
- */
 class SessionManager(context: Context) {
-    private var prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-
+    private var prefs: SharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+    
     companion object {
-        private const val PREFS_NAME = "explorandes_prefs"
-        private const val AUTH_TOKEN = "auth_token"
+        const val PREF_NAME = "ExplorandesPrefs"
+        const val USER_TOKEN = "user_token"
+        const val USER_ID = "user_id"
+        const val USER_EMAIL = "user_email"
+        const val USER_NAME = "user_name"
     }
-
-    /**
-     * Save authentication token
-     */
-    fun saveAuthToken(token: String) {
+    
+    // Guardar token JWT
+    fun saveToken(token: String) {
         val editor = prefs.edit()
-        editor.putString(AUTH_TOKEN, token)
+        editor.putString(USER_TOKEN, token)
+        editor.apply()
+        Log.d("SessionManager", "Token guardado: $token")
+    }
+    
+    // Obtener token JWT
+    fun getToken(): String? {
+        return prefs.getString(USER_TOKEN, null)
+    }
+    
+    // Guardar datos básicos del usuario
+    fun saveUserInfo(id: Long, email: String, name: String) {
+        Log.d("SessionManager", "Guardando info de usuario: ID=$id, Email=$email, Name=$name")
+        val editor = prefs.edit()
+        editor.putLong(USER_ID, id)
+        editor.putString(USER_EMAIL, email)
+        editor.putString(USER_NAME, name)
         editor.apply()
     }
-
-    /**
-     * Fetch authentication token
-     */
-    fun fetchAuthToken(): String? {
-        return prefs.getString(AUTH_TOKEN, null)
+    
+    // Obtener ID del usuario
+    fun getUserId(): Long {
+        return prefs.getLong(USER_ID, -1)
     }
-
-    /**
-     * Clear authentication token
-     */
-    fun clearAuthToken() {
+    
+    fun isLoggedIn(): Boolean {
+        val token = getToken()
+        val userId = getUserId()
+        val hasToken = !token.isNullOrEmpty()
+        val hasUserId = userId > 0
+        
+        Log.d("SessionManager", "isLoggedIn: Token=${hasToken}, UserId=${hasUserId}")
+        
+        return hasToken && hasUserId
+    }
+    
+    fun logout() {
+        Log.d("SessionManager", "Cerrando sesión y eliminando datos")
         val editor = prefs.edit()
-        editor.remove(AUTH_TOKEN)
+        editor.clear()
         editor.apply()
     }
 }

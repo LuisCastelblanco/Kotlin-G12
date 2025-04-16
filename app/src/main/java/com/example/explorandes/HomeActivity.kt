@@ -1,6 +1,8 @@
 package com.example.explorandes
 
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -8,6 +10,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.explorandes.adapters.BuildingAdapter
@@ -15,7 +18,10 @@ import com.example.explorandes.adapters.RecommendationAdapter
 import com.example.explorandes.models.Building
 import com.example.explorandes.models.Recommendation
 import com.example.explorandes.models.RecommendationType
+import com.example.explorandes.ui.account.AccountFragment
 import com.example.explorandes.ui.navigation.NavigationFragment
+import com.example.explorandes.utils.SessionManager
+import com.example.explorandes.viewmodels.HomeViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class HomeActivity : AppCompatActivity() {
@@ -24,11 +30,65 @@ class HomeActivity : AppCompatActivity() {
     private lateinit var recommendationsRecyclerView: RecyclerView
     private lateinit var nestedScrollView: NestedScrollView
     private lateinit var fragmentContainer: View
+    private lateinit var sessionManager: SessionManager
+    private lateinit var viewModel: HomeViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
 
+        // Inicializar SessionManager
+        sessionManager = SessionManager(this)
+
+        // Verificar si hay un usuario autenticado
+        if (!sessionManager.isLoggedIn()) {
+            Log.d("HomeActivity", "No hay sesión activa, redirigiendo a login")
+            navigateToLogin()
+            return
+        }
+
+        // Inicializar ViewModel
+        viewModel = ViewModelProvider(this).get(HomeViewModel::class.java)
+
+        // Configurar observadores para el ViewModel
+        setupViewModelObservers()
+
+        // Cargar datos del usuario
+        viewModel.loadUserData(sessionManager)
+
+        // Inicializar UI
+        initializeUI()
+    }
+
+    private fun setupViewModelObservers() {
+        // Observar cambios en los datos del usuario
+        viewModel.user.observe(this) { user ->
+            Log.d("HomeActivity", "Usuario cargado: ${user.username}")
+            // Actualizar la información del usuario en SessionManager
+            sessionManager.saveUserInfo(user.id, user.email, user.username)
+        }
+
+        // Observar errores
+        viewModel.error.observe(this) { errorMsg ->
+            errorMsg?.let {
+                Log.e("HomeActivity", "Error: $it")
+                Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
+
+                // Si hay un error de autenticación, redirigir a login
+                if (it.contains("401") || it.contains("no encontró")) {
+                    sessionManager.logout()
+                    navigateToLogin()
+                }
+            }
+        }
+
+        // Observar estado de carga
+        viewModel.isLoading.observe(this) { isLoading ->
+            // Aquí podrías mostrar/ocultar un indicador de carga si lo necesitas
+        }
+    }
+
+    private fun initializeUI() {
         // Find views needed for navigation
         nestedScrollView = findViewById(R.id.nestedScrollView)
         fragmentContainer = findViewById(R.id.fragment_container)
@@ -149,7 +209,7 @@ class HomeActivity : AppCompatActivity() {
                     true
                 }
                 R.id.navigation_account -> {
-                    Toast.makeText(this, getString(R.string.account), Toast.LENGTH_SHORT).show()
+                    loadFragment(AccountFragment())
                     true
                 }
                 else -> false
@@ -168,7 +228,6 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    // New methods for handling the navigation fragment
     private fun showHomeContent() {
         // Hide any fragments and show the main content
         val fragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
@@ -192,5 +251,12 @@ class HomeActivity : AppCompatActivity() {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
             .commit()
+    }
+
+    private fun navigateToLogin() {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
     }
 }

@@ -36,26 +36,26 @@ class HomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
-
+    
         // Inicializar SessionManager
         sessionManager = SessionManager(this)
-
+    
         // Verificar si hay un usuario autenticado
         if (!sessionManager.isLoggedIn()) {
             Log.d("HomeActivity", "No hay sesión activa, redirigiendo a login")
             navigateToLogin()
             return
         }
-
+    
         // Inicializar ViewModel
         viewModel = ViewModelProvider(this).get(HomeViewModel::class.java)
-
+    
         // Configurar observadores para el ViewModel
         setupViewModelObservers()
-
+    
         // Cargar datos del usuario
         viewModel.loadUserData(sessionManager)
-
+    
         // Inicializar UI
         initializeUI()
     }
@@ -92,13 +92,17 @@ class HomeActivity : AppCompatActivity() {
         // Find views needed for navigation
         nestedScrollView = findViewById(R.id.nestedScrollView)
         fragmentContainer = findViewById(R.id.fragment_container)
-
+    
+        // Obtener y mostrar el nombre del usuario
+        val userName = sessionManager.getUsername() ?: "Usuario"
+        findViewById<TextView>(R.id.greeting_text).text = "Hola, $userName"
+    
         // Setup UI components
         setupCategoryIcons()
         setupRecyclerViews()
         setupBottomNavigation()
         setupClickListeners()
-
+    
         // Check if we should open directly to the navigation tab
         if (intent.getBooleanExtra("OPEN_NAVIGATION", false)) {
             val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottom_navigation)

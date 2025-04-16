@@ -256,36 +256,39 @@ fun LoginScreen(navController: NavHostController) {
                                     val response = ApiClient.apiService.login(AuthRequest(email = email, password = password))
                                     
                                     if (response.isSuccessful && response.body() != null) {
-                                        // Save token and user info
-                                        response.body()?.let { authResponse ->
-                                            Log.d("LoginScreen", "Login exitoso: ${authResponse.token}")
+                                        // Obtener la respuesta
+                                        val authResponse = response.body()!!
+                                        Log.d("LoginScreen", "Login exitoso: ${authResponse.token}")
+                                        
+                                        // Guardar token
+                                        sessionManager.saveToken(authResponse.token)
+                                        
+                                        // Extraer datos del usuario de la respuesta plana
+                                        val userId = authResponse.id
+                                        val userEmail = authResponse.email
+                                        val userName = authResponse.username ?: authResponse.firstName ?: email.split('@')[0]
+                                        
+                                        if (userId != null && userEmail != null) {
+                                            Log.d("LoginScreen", "Datos de usuario: id=$userId, email=$userEmail, name=$userName")
+                                            sessionManager.saveUserInfo(userId, userEmail, userName ?: "Usuario")
                                             
-                                            // Guardar token
-                                            sessionManager.saveToken(authResponse.token)
-                                            
-                                            // Guardar información del usuario
-                                            authResponse.user?.let { user ->
-                                                Log.d("LoginScreen", "Usuario recibido: ${user.id}, ${user.email}, ${user.username}")
-                                                sessionManager.saveUserInfo(user.id, user.email, user.username)
-                                                
-                                                // Verificar que se guardó correctamente
-                                                if (sessionManager.getUserId() > 0) {
-                                                    // Navigate to home
-                                                    val intent = Intent(context, HomeActivity::class.java)
-                                                    context.startActivity(intent)
-                                                    // Finish current activity if needed
-                                                    if (context is ComponentActivity) {
-                                                        context.finish()
-                                                    }
-                                                } else {
-                                                    errorMessage = "Error al guardar datos de usuario"
+                                            // Verificar que se guardó correctamente
+                                            if (sessionManager.getUserId() > 0) {
+                                                // Navigate to home
+                                                val intent = Intent(context, HomeActivity::class.java)
+                                                context.startActivity(intent)
+                                                // Finish current activity if needed
+                                                if (context is ComponentActivity) {
+                                                    context.finish()
                                                 }
-                                            } ?: run {
-                                                errorMessage = "No se recibieron datos de usuario en la respuesta"
-                                                Log.e("LoginScreen", "No hay datos de usuario en la respuesta")
-                                                // Eliminamos el token ya que no tenemos datos completos
-                                                sessionManager.logout()
+                                            } else {
+                                                errorMessage = "Error al guardar datos de usuario"
                                             }
+                                        } else {
+                                            errorMessage = "No se recibieron datos de usuario en la respuesta"
+                                            Log.e("LoginScreen", "No hay datos de usuario en la respuesta")
+                                            // Eliminamos el token ya que no tenemos datos completos
+                                            sessionManager.logout()
                                         }
                                     } else {
                                         errorMessage = "Login failed: ${response.code()} - ${response.errorBody()?.string()}"
@@ -512,36 +515,39 @@ fun RegisterScreen(navController: NavHostController) {
                                     val response = ApiClient.apiService.register(registerRequest)
                                     
                                     if (response.isSuccessful && response.body() != null) {
-                                        // Save token from response
-                                        response.body()?.let { authResponse ->
-                                            Log.d("RegisterScreen", "Registro exitoso: ${authResponse.token}")
+                                        // Obtener la respuesta
+                                        val authResponse = response.body()!!
+                                        Log.d("RegisterScreen", "Registro exitoso: ${authResponse.token}")
+                                        
+                                        // Guardar token
+                                        sessionManager.saveToken(authResponse.token)
+                                        
+                                        // Extraer datos del usuario de la respuesta plana
+                                        val userId = authResponse.id
+                                        val userEmail = authResponse.email
+                                        val userName = authResponse.username ?: authResponse.firstName ?: email.split('@')[0]
+                                        
+                                        if (userId != null && userEmail != null) {
+                                            Log.d("RegisterScreen", "Datos de usuario: id=$userId, email=$userEmail, name=$userName")
+                                            sessionManager.saveUserInfo(userId, userEmail, userName ?: username)
                                             
-                                            // Guardar token
-                                            sessionManager.saveToken(authResponse.token)
-                                            
-                                            // Guardar información del usuario
-                                            authResponse.user?.let { user ->
-                                                Log.d("RegisterScreen", "Usuario recibido: ${user.id}, ${user.email}, ${user.username}")
-                                                sessionManager.saveUserInfo(user.id, user.email, user.username)
-                                                
-                                                // Verificar que se guardó correctamente
-                                                if (sessionManager.getUserId() > 0) {
-                                                    // Navigate to home
-                                                    val intent = Intent(context, HomeActivity::class.java)
-                                                    context.startActivity(intent)
-                                                    // Finish current activity if needed
-                                                    if (context is ComponentActivity) {
-                                                        context.finish()
-                                                    }
-                                                } else {
-                                                    errorMessage = "Error al guardar datos de usuario"
+                                            // Verificar que se guardó correctamente
+                                            if (sessionManager.getUserId() > 0) {
+                                                // Navigate to home
+                                                val intent = Intent(context, HomeActivity::class.java)
+                                                context.startActivity(intent)
+                                                // Finish current activity if needed
+                                                if (context is ComponentActivity) {
+                                                    context.finish()
                                                 }
-                                            } ?: run {
-                                                errorMessage = "No se recibieron datos de usuario en la respuesta"
-                                                Log.e("RegisterScreen", "No hay datos de usuario en la respuesta")
-                                                // Eliminamos el token ya que no tenemos datos completos
-                                                sessionManager.logout()
+                                            } else {
+                                                errorMessage = "Error al guardar datos de usuario"
                                             }
+                                        } else {
+                                            errorMessage = "No se recibieron datos de usuario en la respuesta"
+                                            Log.e("RegisterScreen", "No hay datos de usuario en la respuesta")
+                                            // Eliminamos el token ya que no tenemos datos completos
+                                            sessionManager.logout()
                                         }
                                     } else {
                                         errorMessage = "Registration failed: ${response.code()} - ${response.errorBody()?.string()}"

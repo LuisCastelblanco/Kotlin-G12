@@ -27,6 +27,14 @@ class SessionManager(context: Context) {
     fun getToken(): String? {
         return prefs.getString(USER_TOKEN, null)
     }
+
+    fun getUsername(): String? {
+        return prefs.getString(USER_NAME, null)
+    }
+    
+    fun getEmail(): String? {
+        return prefs.getString(USER_EMAIL, null)
+    }
     
     // Guardar datos básicos del usuario
     fun saveUserInfo(id: Long, email: String, name: String) {

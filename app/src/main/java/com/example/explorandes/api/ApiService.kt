@@ -15,14 +15,14 @@ interface ApiService {
     @POST("auth/register")
     suspend fun register(@Body request: RegisterRequest): Response<AuthResponse>
 
-    @GET("users/{id}")
+    @GET("api/users/{id}")
     suspend fun getUserById(@Path("id") id: Long): Response<User>
 
-    @PUT("users/{id}")
+    @PUT("api/users/{id}")
     suspend fun updateUser(@Path("id") id: Long, @Body user: User): Response<User>
 
     @Multipart
-    @POST("users/{userId}/profile-image")
+    @POST("api/users/{userId}/profile-image")
     suspend fun uploadProfileImage(
         @Path("userId") userId: Long,
         @Part image: MultipartBody.Part

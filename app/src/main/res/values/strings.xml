@@ -34,4 +34,8 @@
     <string name="description">Description</string>
     <string name="add_to_calendar">Add to Calendar</string>
     <string name="share">Share</string>
+    <string name="date_and_time">Date and Time</string>
+    <string name="tap_to_view_location">Tap to view location on map</string>
+    <string name="tap_to_view_location_on_map">Tap to view location on map</string>
+    <string name="share_event">Share event</string>
 </resources>

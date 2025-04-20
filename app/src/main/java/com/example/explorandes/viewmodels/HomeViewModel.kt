@@ -1,11 +1,10 @@
 package com.example.explorandes.viewmodels
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
+import com.example.explorandes.api.ApiClient
 import com.example.explorandes.models.Building
+import com.example.explorandes.models.Event
 import com.example.explorandes.models.User
 import com.example.explorandes.models.UserLocation
 import com.example.explorandes.repositories.BuildingRepository
@@ -33,6 +32,8 @@ class HomeViewModel : ViewModel() {
     private val _userLocation = MutableLiveData<UserLocation>()
     val userLocation: LiveData<UserLocation> = _userLocation
 
+    val events = MutableLiveData<List<Event>>()
+
     fun loadUserData(sessionManager: SessionManager) {
         viewModelScope.launch {
             try {
@@ -40,24 +41,18 @@ class HomeViewModel : ViewModel() {
                 _error.value = null
 
                 val userId = sessionManager.getUserId()
-                Log.d("HomeViewModel", "Loading user data for ID: $userId")
-
                 if (userId > 0) {
                     val userData = userRepository.getUserById(userId)
                     userData?.let {
                         _user.value = it
-                        Log.d("HomeViewModel", "User data loaded: ${it.username}")
                     } ?: run {
-                        _error.value = "Failed to load user data: User not found"
-                        Log.e("HomeViewModel", "User not found for ID: $userId")
+                        _error.value = "Usuario no encontrado"
                     }
                 } else {
-                    _error.value = "No user ID available"
-                    Log.e("HomeViewModel", "No valid user ID to load data")
+                    _error.value = "ID de usuario inválido"
                 }
             } catch (e: Exception) {
-                _error.value = "Failed to load user data: ${e.localizedMessage}"
-                Log.e("HomeViewModel", "Error loading user data", e)
+                _error.value = "Error cargando usuario: ${e.localizedMessage}"
             } finally {
                 _isLoading.value = false
             }
@@ -69,14 +64,9 @@ class HomeViewModel : ViewModel() {
             try {
                 _isLoading.value = true
                 _error.value = null
-                Log.d("HomeViewModel", "Loading all buildings")
-
-                val allBuildings = buildingRepository.getAllBuildings()
-                _buildings.value = allBuildings
-                Log.d("HomeViewModel", "Loaded ${allBuildings.size} buildings")
+                _buildings.value = buildingRepository.getAllBuildings()
             } catch (e: Exception) {
-                _error.value = "Failed to load buildings: ${e.localizedMessage}"
-                Log.e("HomeViewModel", "Error loading buildings", e)
+                _error.value = "Error cargando edificios: ${e.localizedMessage}"
             } finally {
                 _isLoading.value = false
             }
@@ -88,14 +78,9 @@ class HomeViewModel : ViewModel() {
             try {
                 _isLoading.value = true
                 _error.value = null
-                Log.d("HomeViewModel", "Loading buildings by category: $category")
-
-                val filteredBuildings = buildingRepository.getBuildingsByCategory(category)
-                _buildings.value = filteredBuildings
-                Log.d("HomeViewModel", "Loaded ${filteredBuildings.size} buildings for category: $category")
+                _buildings.value = buildingRepository.getBuildingsByCategory(category)
             } catch (e: Exception) {
-                _error.value = "Failed to load buildings by category: ${e.localizedMessage}"
-                Log.e("HomeViewModel", "Error loading buildings by category", e)
+                _error.value = "Error filtrando edificios: ${e.localizedMessage}"
             } finally {
                 _isLoading.value = false
             }
@@ -107,14 +92,9 @@ class HomeViewModel : ViewModel() {
             try {
                 _isLoading.value = true
                 _error.value = null
-                Log.d("HomeViewModel", "Loading nearby buildings at lat:$latitude, lon:$longitude")
-
-                val nearbyBuildings = buildingRepository.getNearbyBuildings(latitude, longitude)
-                _buildings.value = nearbyBuildings
-                Log.d("HomeViewModel", "Loaded ${nearbyBuildings.size} nearby buildings")
+                _buildings.value = buildingRepository.getNearbyBuildings(latitude, longitude)
             } catch (e: Exception) {
-                _error.value = "Failed to load nearby buildings: ${e.localizedMessage}"
-                Log.e("HomeViewModel", "Error loading nearby buildings", e)
+                _error.value = "Error cargando edificios cercanos: ${e.localizedMessage}"
             } finally {
                 _isLoading.value = false
             }
@@ -123,7 +103,6 @@ class HomeViewModel : ViewModel() {
 
     fun updateUserLocation(latitude: Double, longitude: Double) {
         _userLocation.value = UserLocation(latitude, longitude)
-        Log.d("HomeViewModel", "User location updated to lat:$latitude, lon:$longitude")
     }
 
     fun searchBuildings(query: String) {
@@ -131,23 +110,31 @@ class HomeViewModel : ViewModel() {
             try {
                 _isLoading.value = true
                 _error.value = null
-                Log.d("HomeViewModel", "Searching buildings with query: $query")
-
-                // This implements client-side filtering since there's no dedicated search endpoint
-                val searchResults = if (query.isEmpty()) {
-                    buildingRepository.getAllBuildings()
-                } else {
-                    buildingRepository.getAllBuildings().filter {
-                        it.name.contains(query, ignoreCase = true) ||
-                                (it.description?.contains(query, ignoreCase = true) ?: false)
-                    }
+                val all = buildingRepository.getAllBuildings()
+                _buildings.value = all.filter {
+                    it.name.contains(query, ignoreCase = true) ||
+                            it.description?.contains(query, ignoreCase = true) == true
                 }
-
-                _buildings.value = searchResults
-                Log.d("HomeViewModel", "Search found ${searchResults.size} results")
             } catch (e: Exception) {
-                _error.value = "Search failed: ${e.localizedMessage}"
-                Log.e("HomeViewModel", "Error during search", e)
+                _error.value = "Error en búsqueda: ${e.localizedMessage}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun loadEvents() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val response = ApiClient.apiService.getAllEvents()
+                if (response.isSuccessful) {
+                    events.value = response.body()
+                } else {
+                    _error.value = "Error al cargar eventos: ${response.code()}"
+                }
+            } catch (e: Exception) {
+                _error.value = "Error de red: ${e.message}"
             } finally {
                 _isLoading.value = false
             }

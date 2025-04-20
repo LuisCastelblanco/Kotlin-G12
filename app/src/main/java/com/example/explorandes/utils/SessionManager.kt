@@ -6,7 +6,7 @@ import android.util.Log
 
 class SessionManager(context: Context) {
     private var prefs: SharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-    
+
     companion object {
         const val PREF_NAME = "ExplorandesPrefs"
         const val USER_TOKEN = "user_token"
@@ -14,7 +14,7 @@ class SessionManager(context: Context) {
         const val USER_EMAIL = "user_email"
         const val USER_NAME = "user_name"
     }
-    
+
     // Guardar token JWT
     fun saveToken(token: String) {
         val editor = prefs.edit()
@@ -22,7 +22,7 @@ class SessionManager(context: Context) {
         editor.apply()
         Log.d("SessionManager", "Token guardado: $token")
     }
-    
+
     // Obtener token JWT
     fun getToken(): String? {
         return prefs.getString(USER_TOKEN, null)
@@ -31,11 +31,11 @@ class SessionManager(context: Context) {
     fun getUsername(): String? {
         return prefs.getString(USER_NAME, null)
     }
-    
+
     fun getEmail(): String? {
         return prefs.getString(USER_EMAIL, null)
     }
-    
+
     // Guardar datos básicos del usuario
     fun saveUserInfo(id: Long, email: String, name: String) {
         Log.d("SessionManager", "Guardando info de usuario: ID=$id, Email=$email, Name=$name")
@@ -45,23 +45,24 @@ class SessionManager(context: Context) {
         editor.putString(USER_NAME, name)
         editor.apply()
     }
-    
+
     // Obtener ID del usuario
     fun getUserId(): Long {
         return prefs.getLong(USER_ID, -1)
     }
-    
+
     fun isLoggedIn(): Boolean {
         val token = getToken()
         val userId = getUserId()
         val hasToken = !token.isNullOrEmpty()
         val hasUserId = userId > 0
-        
-        Log.d("SessionManager", "isLoggedIn: Token=${hasToken}, UserId=${hasUserId}")
-        
+
+        Log.d("SessionManager", "isLoggedIn check: Token=${hasToken}, UserId=${hasUserId}")
+
+        // Require both token and userId to be valid
         return hasToken && hasUserId
     }
-    
+
     fun logout() {
         Log.d("SessionManager", "Cerrando sesión y eliminando datos")
         val editor = prefs.edit()

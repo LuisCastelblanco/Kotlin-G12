@@ -35,13 +35,24 @@ import com.example.explorandes.utils.SessionManager
 class MainActivity : ComponentActivity() {
 
     private lateinit var lightSensorManager: LightSensorManager
+    private lateinit var sessionManager: SessionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
+        // Initialize sessionManager at activity level
+        sessionManager = SessionManager(this)
+
+        // Check if user is already logged in
+        if (sessionManager.isLoggedIn()) {
+            Log.d("MainActivity", "User is already logged in, navigating to HomeActivity")
+            startHomeActivity()
+            return
+        }
+
         // Inicializar ApiClient con el contexto
         ApiClient.init(applicationContext)
-        
+
         setContent {
             AppNavigator()
         }
@@ -52,6 +63,9 @@ class MainActivity : ComponentActivity() {
         }
 
         lightSensorManager.startListening()
+
+        // Initialize ApiClient
+        ApiClient.init(applicationContext)
     }
 
     override fun onDestroy() {
@@ -69,6 +83,12 @@ class MainActivity : ComponentActivity() {
 
         BrightnessController.setBrightness(this, brightnessLevel)
     }
+
+    private fun startHomeActivity() {
+        val intent = Intent(this, HomeActivity::class.java)
+        startActivity(intent)
+        finish()
+    }
 }
 
 // Navigation controller
@@ -76,35 +96,14 @@ class MainActivity : ComponentActivity() {
 fun AppNavigator() {
     val navController = rememberNavController()
     var showSplash by remember { mutableStateOf(true) }
-    
+
     // Check if user is already logged in
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
-    
+
     LaunchedEffect(Unit) {
         delay(2000) // Wait 2 seconds
         showSplash = false
-        
-        // Modificamos la verificación para asegurar que tenemos tanto token como info de usuario
-        val hasToken = sessionManager.getToken() != null
-        val hasUserId = sessionManager.getUserId() > 0
-        
-        Log.d("AppNavigator", "Verificando login - Token: $hasToken, UserId: $hasUserId")
-        
-        if (hasToken && hasUserId) {
-            // Usuario completamente autenticado
-            Log.d("AppNavigator", "Usuario autenticado, navegando a HomeActivity")
-            val intent = Intent(context, HomeActivity::class.java)
-            context.startActivity(intent)
-            if (context is ComponentActivity) {
-                context.finish()
-            }
-        } else if (hasToken && !hasUserId) {
-            // Tiene token pero falta info de usuario - limpiar sesión
-            Log.d("AppNavigator", "Token encontrado pero sin ID de usuario. Limpiando sesión.")
-            sessionManager.logout()
-        }
-        // Si no tiene token ni userID, se queda en la pantalla de login/registro
     }
 
     if (showSplash) {
@@ -169,14 +168,14 @@ fun LoginScreen(navController: NavHostController) {
     // Get the context to launch intent
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    
+
     // Create session manager
     val sessionManager = remember { SessionManager(context) }
-    
+
     // State for input fields
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    
+
     // State for loading and error
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -249,29 +248,29 @@ fun LoginScreen(navController: NavHostController) {
                             // Clear previous error
                             errorMessage = null
                             isLoading = true
-                            
+
                             // Perform login
                             scope.launch {
                                 try {
                                     val response = ApiClient.apiService.login(AuthRequest(email = email, password = password))
-                                    
+
                                     if (response.isSuccessful && response.body() != null) {
                                         // Obtener la respuesta
                                         val authResponse = response.body()!!
                                         Log.d("LoginScreen", "Login exitoso: ${authResponse.token}")
-                                        
+
                                         // Guardar token
                                         sessionManager.saveToken(authResponse.token)
-                                        
-                                        // Extraer datos del usuario de la respuesta plana
+
+                                        // Extraer datos del usuario de la respuesta
                                         val userId = authResponse.id
                                         val userEmail = authResponse.email
                                         val userName = authResponse.username ?: authResponse.firstName ?: email.split('@')[0]
-                                        
+
                                         if (userId != null && userEmail != null) {
                                             Log.d("LoginScreen", "Datos de usuario: id=$userId, email=$userEmail, name=$userName")
                                             sessionManager.saveUserInfo(userId, userEmail, userName ?: "Usuario")
-                                            
+
                                             // Verificar que se guardó correctamente
                                             if (sessionManager.getUserId() > 0) {
                                                 // Navigate to home
@@ -324,22 +323,6 @@ fun LoginScreen(navController: NavHostController) {
             ) {
                 Text("Don't have an account? Sign Up", color = Color(0xFFE91E63))
             }
-
-            // Skip login button for development
-            Spacer(modifier = Modifier.height(8.dp))
-            TextButton(
-                onClick = {
-                    // Launch HomeActivity
-                    val intent = Intent(context, HomeActivity::class.java)
-                    context.startActivity(intent)
-                    // Finish current activity if needed
-                    if (context is ComponentActivity) {
-                        context.finish()
-                    }
-                }
-            ) {
-                Text("Skip Login (Development Only)", color = Color.Gray)
-            }
         }
     }
 }
@@ -349,10 +332,10 @@ fun RegisterScreen(navController: NavHostController) {
     // Get the context to launch intent
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    
+
     // Create session manager
     val sessionManager = remember { SessionManager(context) }
-    
+
     // State for input fields
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -360,7 +343,7 @@ fun RegisterScreen(navController: NavHostController) {
     var confirmPassword by remember { mutableStateOf("") }
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
-    
+
     // State for loading and error
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -400,7 +383,7 @@ fun RegisterScreen(navController: NavHostController) {
                     focusedTextColor = Color.White
                 )
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
             TextField(
                 value = email,
@@ -414,7 +397,7 @@ fun RegisterScreen(navController: NavHostController) {
                     focusedTextColor = Color.White
                 )
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
             TextField(
                 value = firstName,
@@ -428,7 +411,7 @@ fun RegisterScreen(navController: NavHostController) {
                     focusedTextColor = Color.White
                 )
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
             TextField(
                 value = lastName,
@@ -442,7 +425,7 @@ fun RegisterScreen(navController: NavHostController) {
                     focusedTextColor = Color.White
                 )
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
             TextField(
                 value = password,
@@ -457,7 +440,7 @@ fun RegisterScreen(navController: NavHostController) {
                     focusedTextColor = Color.White
                 )
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
             TextField(
                 value = confirmPassword,
@@ -498,7 +481,7 @@ fun RegisterScreen(navController: NavHostController) {
                             // Clear previous error
                             errorMessage = null
                             isLoading = true
-                            
+
                             // Create register request object
                             val registerRequest = RegisterRequest(
                                 username = username,
@@ -507,30 +490,30 @@ fun RegisterScreen(navController: NavHostController) {
                                 firstName = firstName.takeIf { it.isNotEmpty() },
                                 lastName = lastName.takeIf { it.isNotEmpty() }
                             )
-                            
+
                             // Perform registration
                             scope.launch {
                                 try {
                                     Log.d("RegisterScreen", "Enviando solicitud de registro: $registerRequest")
                                     val response = ApiClient.apiService.register(registerRequest)
-                                    
+
                                     if (response.isSuccessful && response.body() != null) {
                                         // Obtener la respuesta
                                         val authResponse = response.body()!!
                                         Log.d("RegisterScreen", "Registro exitoso: ${authResponse.token}")
-                                        
+
                                         // Guardar token
                                         sessionManager.saveToken(authResponse.token)
-                                        
+
                                         // Extraer datos del usuario de la respuesta plana
                                         val userId = authResponse.id
                                         val userEmail = authResponse.email
                                         val userName = authResponse.username ?: authResponse.firstName ?: email.split('@')[0]
-                                        
+
                                         if (userId != null && userEmail != null) {
                                             Log.d("RegisterScreen", "Datos de usuario: id=$userId, email=$userEmail, name=$userName")
                                             sessionManager.saveUserInfo(userId, userEmail, userName ?: username)
-                                            
+
                                             // Verificar que se guardó correctamente
                                             if (sessionManager.getUserId() > 0) {
                                                 // Navigate to home

@@ -14,4 +14,24 @@
     <string name="navigate">Navigate</string>
     <string name="notifications">Notifications</string>
     <string name="account">Account</string>
+    <!-- Building Detail strings -->
+    <string name="building_image">Building Image</string>
+    <string name="places_in_this_building">Places in this Building</string>
+    <string name="no_places_available">No places available in this building</string>
+    <!-- Place Item strings -->
+    <string name="place_image">Place Image</string>
+    <!-- Category Item strings -->
+    <string name="category_icon">Category Icon</string>
+    <!-- Navigation Fragment strings -->
+    <string name="navigation">Navigation</string>
+    <string name="search_places">Search places…</string>
+    <string name="no_places_found">No places found</string>
+    <string name="event_image">Event Image</string>
+    <string name="now_playing">Now Playing</string>
+    <string name="date">Date</string>
+    <string name="time">Time</string>
+    <string name="location">Location</string>
+    <string name="description">Description</string>
+    <string name="add_to_calendar">Add to Calendar</string>
+    <string name="share">Share</string>
 </resources>

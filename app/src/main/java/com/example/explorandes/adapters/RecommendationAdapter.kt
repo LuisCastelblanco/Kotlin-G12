@@ -8,16 +8,17 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.explorandes.R
 import com.example.explorandes.models.Recommendation
+import com.example.explorandes.models.RecommendationType
 
 class RecommendationAdapter(
     private val recommendations: List<Recommendation>,
-    private val onRecommendationClickListener: (Recommendation) -> Unit = {}
+    private val onRecommendationClick: (Recommendation) -> Unit
 ) : RecyclerView.Adapter<RecommendationAdapter.RecommendationViewHolder>() {
 
     class RecommendationViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val recommendationImage: ImageView = itemView.findViewById(R.id.recommendation_image)
+        val recommendationTitle: TextView = itemView.findViewById(R.id.recommendation_title)
         val recommendationType: TextView = itemView.findViewById(R.id.recommendation_type)
-        val recommendationDescription: TextView = itemView.findViewById(R.id.recommendation_description)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecommendationViewHolder {
@@ -28,22 +29,22 @@ class RecommendationAdapter(
 
     override fun onBindViewHolder(holder: RecommendationViewHolder, position: Int) {
         val recommendation = recommendations[position]
-        
-        // Format the title based on recommendation type
-        val formattedTitle = when (recommendation.type) {
-            com.example.explorandes.models.RecommendationType.PODCAST -> "Podcast: \"${recommendation.title}\""
-            com.example.explorandes.models.RecommendationType.DOCUMENTARY -> "Documental: ${recommendation.title}"
-            com.example.explorandes.models.RecommendationType.THEATER -> "Teatro: ${recommendation.title}"
-            com.example.explorandes.models.RecommendationType.EVENT -> "Evento: ${recommendation.title}"
+
+        holder.recommendationTitle.text = recommendation.title
+
+        // Set the type text based on the enum
+        holder.recommendationType.text = when(recommendation.type) {
+            RecommendationType.PODCAST -> "Podcast"
+            RecommendationType.DOCUMENTARY -> "Documentary"
+            RecommendationType.THEATER -> "Theater"
+            RecommendationType.EVENT -> "Event"
         }
-        
-        holder.recommendationType.text = formattedTitle
-        holder.recommendationDescription.text = recommendation.description
+
+        // Set image resource
         holder.recommendationImage.setImageResource(recommendation.imageResId)
-        
-        // Set click listener
+
         holder.itemView.setOnClickListener {
-            onRecommendationClickListener(recommendation)
+            onRecommendationClick(recommendation)
         }
     }
 

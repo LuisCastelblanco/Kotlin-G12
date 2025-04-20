@@ -4,36 +4,39 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
     android:gravity="center"
+    android:orientation="vertical"
     android:padding="8dp">
 
-    <androidx.cardview.widget.CardView
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        app:cardCornerRadius="30dp"
-        app:cardElevation="2dp"
-        android:layout_marginBottom="8dp">
-
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@android:color/white">
-
-            <ImageView
-                android:id="@+id/category_icon"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_gravity="center"
-                tools:src="@drawable/ic_building" />
-        </FrameLayout>
-    </androidx.cardview.widget.CardView>
+    <ImageView
+        android:id="@+id/category_icon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="@drawable/circle_background"
+        android:contentDescription="@string/category_icon"
+        android:padding="12dp"
+        tools:src="@drawable/ic_building" />
 
     <TextView
         android:id="@+id/category_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="12sp"
-        android:textColor="@android:color/black"
-        tools:text="Laboratories" />
+        android:layout_marginTop="4dp"
+        android:gravity="center"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+        android:textColor="@color/colorTextSecondary"
+        tools:text="Buildings" />
+
+    <View
+        android:id="@+id/category_indicator"
+        android:layout_width="16dp"
+        android:layout_height="2dp"
+        android:layout_marginTop="4dp"
+        android:background="@color/colorPrimary"
+        android:visibility="invisible"
+        tools:visibility="visible" />
+
 </LinearLayout>

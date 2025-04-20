@@ -44,6 +44,11 @@
             android:name=".MainActivity"
             android:exported="false" />
 
+        <!-- Add BuildingDetailActivity -->
+        <activity
+            android:name=".BuildingDetailActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

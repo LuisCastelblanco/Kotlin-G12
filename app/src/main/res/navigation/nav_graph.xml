@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/eventListFragment">
+
+    <fragment
+        android:id="@+id/eventListFragment"
+        android:name="com.example.explorandes.fragments.EventListFragment"
+        android:label="Events"
+        tools:layout="@layout/fragment_event_list">
+        <action
+            android:id="@+id/action_eventListFragment_to_eventDetailFragment"
+            app:destination="@id/eventDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/eventDetailFragment"
+        android:name="com.example.explorandes.fragments.EventDetailFragment"
+        android:label="Event Details"
+        tools:layout="@layout/fragment_event_detail">
+        <action
+            android:id="@+id/action_eventDetailFragment_to_buildingDetailFragment"
+            app:destination="@id/buildingDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/buildingDetailFragment"
+        android:name="com.example.explorandes.fragments.BuildingDetailFragment"
+        android:label="Building Details"
+        tools:layout="@layout/fragment_building_detail">
+        <argument
+            android:name="buildingId"
+            app:argType="long" />
+    </fragment>
+</navigation>

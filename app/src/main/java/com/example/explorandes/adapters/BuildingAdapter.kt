@@ -6,12 +6,13 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.explorandes.R
 import com.example.explorandes.models.Building
 
 class BuildingAdapter(
-    private val buildings: List<Building>,
-    private val onBuildingClickListener: (Building) -> Unit = {}
+    private var buildings: List<Building>,
+    private val onBuildingClick: (Building) -> Unit = {}
 ) : RecyclerView.Adapter<BuildingAdapter.BuildingViewHolder>() {
 
     class BuildingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -29,14 +30,28 @@ class BuildingAdapter(
     override fun onBindViewHolder(holder: BuildingViewHolder, position: Int) {
         val building = buildings[position]
         holder.buildingName.text = building.name
-        holder.buildingLocation.text = building.location
-        holder.buildingImage.setImageResource(building.imageResId)
-        
-        // Set click listener
+        holder.buildingLocation.text = building.description ?: ""
+
+        // Load image from URL instead of resource
+        if (!building.imageUrl.isNullOrEmpty()) {
+            Glide.with(holder.itemView.context)
+                .load(building.imageUrl)
+                .placeholder(R.drawable.profile_placeholder)
+                .into(holder.buildingImage)
+        } else {
+            holder.buildingImage.setImageResource(R.drawable.profile_placeholder)
+        }
+
         holder.itemView.setOnClickListener {
-            onBuildingClickListener(building)
+            onBuildingClick(building)
         }
     }
 
     override fun getItemCount() = buildings.size
+
+    // Method to update data when fetched from backend
+    fun updateData(newBuildings: List<Building>) {
+        buildings = newBuildings
+        notifyDataSetChanged()
+    }
 }

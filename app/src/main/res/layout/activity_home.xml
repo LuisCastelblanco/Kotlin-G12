@@ -206,7 +206,7 @@
                     tools:listitem="@layout/item_building" />
             </LinearLayout>
 
-            <!-- Recommendations Section -->
+            <!-- Events Section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -226,13 +226,13 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Recommendations"
+                        android:text="Events"
                         android:textSize="18sp"
                         android:textColor="@android:color/black"
                         android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/see_all_recommendations"
+                        android:id="@+id/see_all_events"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="See all"
@@ -241,7 +241,7 @@
                 </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/recommendations_recycler"
+                    android:id="@+id/events_recycler"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:clipToPadding="false"
@@ -249,8 +249,9 @@
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                    tools:listitem="@layout/item_recommendation" />
+                    tools:listitem="@layout/item_event" />
             </LinearLayout>
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

@@ -1,6 +1,8 @@
 package com.example.explorandes
 
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -8,122 +10,149 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.explorandes.adapters.BuildingAdapter
-import com.example.explorandes.adapters.RecommendationAdapter
+import com.example.explorandes.adapters.EventAdapter
+import com.example.explorandes.api.ApiClient
 import com.example.explorandes.models.Building
-import com.example.explorandes.models.Recommendation
-import com.example.explorandes.models.RecommendationType
+import com.example.explorandes.models.Event
+import com.example.explorandes.ui.account.AccountFragment
 import com.example.explorandes.ui.navigation.NavigationFragment
+import com.example.explorandes.utils.SessionManager
+import com.example.explorandes.viewmodels.HomeViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class HomeActivity : AppCompatActivity() {
 
     private lateinit var buildingsRecyclerView: RecyclerView
-    private lateinit var recommendationsRecyclerView: RecyclerView
+    private lateinit var eventsRecyclerView: RecyclerView
     private lateinit var nestedScrollView: NestedScrollView
     private lateinit var fragmentContainer: View
+    private lateinit var sessionManager: SessionManager
+    private lateinit var viewModel: HomeViewModel
+    private lateinit var buildingAdapter: BuildingAdapter
+    private lateinit var eventAdapter: EventAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
 
-        // Find views needed for navigation
+        ApiClient.init(applicationContext)
+        sessionManager = SessionManager(this)
+
+        if (!sessionManager.isLoggedIn()) {
+            Log.d("HomeActivity", "No active session, redirecting to login")
+            navigateToLogin()
+            return
+        }
+
+        viewModel = ViewModelProvider(this).get(HomeViewModel::class.java)
+        setupViewModelObservers()
+        viewModel.loadUserData(sessionManager)
+        initializeUI()
+    }
+
+    private fun setupViewModelObservers() {
+        viewModel.user.observe(this) { user ->
+            Log.d("HomeActivity", "User loaded: ${user.username}")
+            sessionManager.saveUserInfo(user.id, user.email, user.username)
+        }
+
+        viewModel.error.observe(this) { errorMsg ->
+            errorMsg?.let {
+                Log.e("HomeActivity", "Error: $it")
+                Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
+
+                if (it.contains("401") || it.contains("no encontró")) {
+                    sessionManager.logout()
+                    navigateToLogin()
+                }
+            }
+        }
+
+        viewModel.isLoading.observe(this) { /* loading UI optional */ }
+
+        viewModel.buildings.observe(this) { buildings ->
+            if (buildings.isNotEmpty()) {
+                buildingAdapter.updateData(buildings)
+            } else {
+                Log.d("HomeActivity", "No buildings data received")
+            }
+        }
+
+        viewModel.events.observe(this) { events ->
+            if (events != null && events.isNotEmpty()) {
+                eventAdapter.submitList(events)
+            } else {
+                Log.d("HomeActivity", "No events received")
+            }
+        }
+
+    }
+
+    private fun initializeUI() {
         nestedScrollView = findViewById(R.id.nestedScrollView)
         fragmentContainer = findViewById(R.id.fragment_container)
 
-        // Setup UI components
+        val userName = sessionManager.getUsername() ?: "Usuario"
+        findViewById<TextView>(R.id.greeting_text).text = "Hola, $userName"
+
         setupCategoryIcons()
         setupRecyclerViews()
         setupBottomNavigation()
         setupClickListeners()
 
-        // Check if we should open directly to the navigation tab
+        viewModel.loadBuildings()
+        viewModel.loadEvents()
+
         if (intent.getBooleanExtra("OPEN_NAVIGATION", false)) {
-            val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-            bottomNavigation.selectedItemId = R.id.navigation_navigate
+            findViewById<BottomNavigationView>(R.id.bottom_navigation).selectedItemId =
+                R.id.navigation_navigate
         }
     }
 
     private fun setupCategoryIcons() {
-        // Find all category views
         val categoryBuildings = findViewById<View>(R.id.category_buildings)
-        val categoryEvents = findViewById<View>(R.id.category_events)
         val categoryFood = findViewById<View>(R.id.category_food)
-        val categoryStudy = findViewById<View>(R.id.category_study)
         val categoryServices = findViewById<View>(R.id.category_services)
 
-        // Setup Buildings category
+        findViewById<View>(R.id.category_events).visibility = View.GONE
+        findViewById<View>(R.id.category_study).visibility = View.GONE
+
         categoryBuildings.findViewById<ImageView>(R.id.category_icon).setImageResource(R.drawable.ic_building)
         categoryBuildings.findViewById<TextView>(R.id.category_name).text = getString(R.string.buildings)
 
-        // Setup Events category
-        categoryEvents.findViewById<ImageView>(R.id.category_icon).setImageResource(R.drawable.ic_event)
-        categoryEvents.findViewById<TextView>(R.id.category_name).text = getString(R.string.events)
-
-        // Setup Food & Rest category
         categoryFood.findViewById<ImageView>(R.id.category_icon).setImageResource(R.drawable.ic_food)
         categoryFood.findViewById<TextView>(R.id.category_name).text = getString(R.string.food_rest)
 
-        // Setup Study Spaces category
-        categoryStudy.findViewById<ImageView>(R.id.category_icon).setImageResource(R.drawable.ic_study)
-        categoryStudy.findViewById<TextView>(R.id.category_name).text = getString(R.string.study_spaces)
-
-        // Setup Services category
         categoryServices.findViewById<ImageView>(R.id.category_icon).setImageResource(R.drawable.ic_services)
         categoryServices.findViewById<TextView>(R.id.category_name).text = getString(R.string.services)
 
-        // Set click listeners for categories
-        categoryBuildings.setOnClickListener {
-            Toast.makeText(this, getString(R.string.buildings), Toast.LENGTH_SHORT).show()
-        }
-        categoryEvents.setOnClickListener {
-            Toast.makeText(this, getString(R.string.events), Toast.LENGTH_SHORT).show()
-        }
-        categoryFood.setOnClickListener {
-            Toast.makeText(this, getString(R.string.food_rest), Toast.LENGTH_SHORT).show()
-        }
-        categoryStudy.setOnClickListener {
-            Toast.makeText(this, getString(R.string.study_spaces), Toast.LENGTH_SHORT).show()
-        }
-        categoryServices.setOnClickListener {
-            Toast.makeText(this, getString(R.string.services), Toast.LENGTH_SHORT).show()
-        }
+        categoryBuildings.setOnClickListener { viewModel.loadBuildingsByCategory("Buildings") }
+        categoryFood.setOnClickListener { viewModel.loadBuildingsByCategory("Food") }
+        categoryServices.setOnClickListener { viewModel.loadBuildingsByCategory("Services") }
     }
 
     private fun setupRecyclerViews() {
-        // Setup Buildings RecyclerView
         buildingsRecyclerView = findViewById(R.id.buildings_recycler)
         buildingsRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
 
-        // Create sample data for buildings
-        val buildings = listOf(
-            Building("1", "Bloque ML", "Faculty of Engineering", R.drawable.profile_placeholder),
-            Building("2", "Bloque W", "Faculty of Rights", R.drawable.profile_placeholder),
-            Building("3", "Bloque C", "Student Center", R.drawable.profile_placeholder)
-        )
-
-        val buildingAdapter = BuildingAdapter(buildings) { building ->
-            Toast.makeText(this, "Selected: ${building.name}", Toast.LENGTH_SHORT).show()
+        buildingAdapter = BuildingAdapter(emptyList()) { building ->
+            val intent = Intent(this, BuildingDetailActivity::class.java).apply {
+                putExtra("BUILDING_ID", building.id)
+            }
+            startActivity(intent)
         }
         buildingsRecyclerView.adapter = buildingAdapter
 
-        // Setup Recommendations RecyclerView
-        recommendationsRecyclerView = findViewById(R.id.recommendations_recycler)
-        recommendationsRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-
-        // Create sample data for recommendations
-        val recommendations = listOf(
-            Recommendation("1", "Medium", "Anestesia Alberto López", R.drawable.profile_placeholder, RecommendationType.PODCAST),
-            Recommendation("2", "CHOBA", "Audición Alberto López", R.drawable.profile_placeholder, RecommendationType.DOCUMENTARY),
-            Recommendation("3", "C4", "Audición María Pérez", R.drawable.profile_placeholder, RecommendationType.THEATER)
-        )
-
-        val recommendationAdapter = RecommendationAdapter(recommendations) { recommendation ->
-            Toast.makeText(this, "Selected: ${recommendation.title}", Toast.LENGTH_SHORT).show()
+        eventsRecyclerView = findViewById(R.id.events_recycler)
+        eventAdapter = EventAdapter { event ->
+            Toast.makeText(this, "Evento: ${event.title}", Toast.LENGTH_SHORT).show()
         }
-        recommendationsRecyclerView.adapter = recommendationAdapter
+        eventsRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        eventsRecyclerView.adapter = eventAdapter
     }
 
     private fun setupBottomNavigation() {
@@ -133,24 +162,19 @@ class HomeActivity : AppCompatActivity() {
         bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.navigation_home -> {
-                    showHomeContent()
-                    true
+                    showHomeContent(); true
                 }
                 R.id.navigation_favorites -> {
-                    Toast.makeText(this, getString(R.string.favorites), Toast.LENGTH_SHORT).show()
-                    true
+                    Toast.makeText(this, getString(R.string.favorites), Toast.LENGTH_SHORT).show(); true
                 }
                 R.id.navigation_navigate -> {
-                    loadFragment(NavigationFragment())
-                    true
+                    loadFragment(NavigationFragment()); true
                 }
                 R.id.navigation_notifications -> {
-                    Toast.makeText(this, getString(R.string.notifications), Toast.LENGTH_SHORT).show()
-                    true
+                    Toast.makeText(this, getString(R.string.notifications), Toast.LENGTH_SHORT).show(); true
                 }
                 R.id.navigation_account -> {
-                    Toast.makeText(this, getString(R.string.account), Toast.LENGTH_SHORT).show()
-                    true
+                    loadFragment(AccountFragment()); true
                 }
                 else -> false
             }
@@ -158,39 +182,37 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun setupClickListeners() {
-        // Set click listeners for the "See all" buttons
         findViewById<TextView>(R.id.see_all_buildings).setOnClickListener {
-            Toast.makeText(this, "See all buildings", Toast.LENGTH_SHORT).show()
+            findViewById<BottomNavigationView>(R.id.bottom_navigation).selectedItemId =
+                R.id.navigation_navigate
         }
 
-        findViewById<TextView>(R.id.see_all_recommendations).setOnClickListener {
-            Toast.makeText(this, "See all recommendations", Toast.LENGTH_SHORT).show()
+        findViewById<TextView>(R.id.see_all_events).setOnClickListener {
+            Toast.makeText(this, "Ver todos los eventos", Toast.LENGTH_SHORT).show()
         }
     }
 
-    // New methods for handling the navigation fragment
     private fun showHomeContent() {
-        // Hide any fragments and show the main content
         val fragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
-        if (fragment != null) {
-            supportFragmentManager.beginTransaction()
-                .remove(fragment)
-                .commit()
+        fragment?.let {
+            supportFragmentManager.beginTransaction().remove(it).commit()
         }
-
-        // Show the home content
         nestedScrollView.visibility = View.VISIBLE
         fragmentContainer.visibility = View.GONE
     }
 
     private fun loadFragment(fragment: Fragment) {
-        // Hide the home content
         nestedScrollView.visibility = View.GONE
         fragmentContainer.visibility = View.VISIBLE
-
-        // Load the fragment
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
             .commit()
+    }
+
+    private fun navigateToLogin() {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
     }
 }

@@ -49,6 +49,12 @@
             android:name=".BuildingDetailActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".MapActivity"
+            android:exported="false"
+            android:label="@string/map"
+            android:theme="@style/Theme.ExplorAndes" />
+
     </application>
 
 </manifest>

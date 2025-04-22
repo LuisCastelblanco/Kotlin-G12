@@ -130,4 +130,15 @@
         android:visibility="gone"
         app:indicatorColor="@color/colorPrimary" />
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_map"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:contentDescription="@string/view_on_map"
+        app:srcCompat="@drawable/ic_map"
+        app:backgroundTint="@color/colorPrimary"
+        app:tint="@android:color/white" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

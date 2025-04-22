@@ -50,6 +50,21 @@ class BuildingDetailActivity : AppCompatActivity() {
         // Initialize views
         initializeViews()
 
+        val fabMap = findViewById<FloatingActionButton>(R.id.fab_map)
+        fabMap.setOnClickListener {
+            // Create map fragment with building ID
+            val mapFragment = MapFragment().apply {
+                arguments = Bundle().apply {
+                    putLong("BUILDING_ID", buildingId)
+                }
+            }
+            
+            // Start MapFragment as a new activity
+            val intent = Intent(this, MapActivity::class.java)
+            intent.putExtra("BUILDING_ID", buildingId)
+            startActivity(intent)
+        }
+
         // Setup observers
         setupObservers()
 

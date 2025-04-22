@@ -15,6 +15,7 @@ import com.example.explorandes.adapters.CategoryAdapter
 import com.example.explorandes.adapters.PlaceAdapter
 import com.example.explorandes.models.Category
 import com.google.android.material.progressindicator.CircularProgressIndicator
+import android.widget.Button
 
 class NavigationFragment : Fragment() {
 
@@ -39,6 +40,14 @@ class NavigationFragment : Fragment() {
         val categoriesRecyclerView = view.findViewById<RecyclerView>(R.id.categories_recyclerview)
         searchView = view.findViewById(R.id.search_view)
         progressIndicator = view.findViewById(R.id.progress_indicator)
+
+        val mapButton = view.findViewById<Button>(R.id.view_map_button)
+        mapButton.setOnClickListener {
+        parentFragmentManager.beginTransaction()
+        .replace(R.id.fragment_container, MapFragment())
+        .addToBackStack("map")
+        .commit()
+}
 
         // Setup RecyclerViews
         setupPlacesRecyclerView(placesRecyclerView)

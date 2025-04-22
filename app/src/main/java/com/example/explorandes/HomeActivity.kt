@@ -218,7 +218,8 @@ class HomeActivity : AppCompatActivity() {
                     true
                 }
                 R.id.navigation_navigate -> {
-                    loadFragment(NavigationFragment())
+                    val intent = Intent(this, MapActivity::class.java)
+                    startActivity(intent)
                     true
                 }
                 R.id.navigation_notifications -> {

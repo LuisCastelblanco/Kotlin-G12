@@ -9,10 +9,6 @@ import com.example.explorandes.models.Place
 import com.example.explorandes.repositories.BuildingRepository
 import com.example.explorandes.repositories.PlaceRepository
 import kotlinx.coroutines.launch
-import android.content.Intent
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import androidx.fragment.app.MapFragment
-import android.os.Bundle
 
 class BuildingDetailViewModel : ViewModel() {
 

@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/explorandes/ui/map/MapFragment.kt
 package com.example.explorandes.ui.map
 
 import android.Manifest
@@ -8,6 +7,7 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
@@ -33,7 +33,6 @@ import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.launch
-import android.view.View
 
 class MapFragment : Fragment(), OnMapReadyCallback {
 
@@ -85,7 +84,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         }
 
         // Check if we received a buildingId in arguments
-        arguments?.getLong("BUILDING_ID", -1)?.let { buildingId ->
+        arguments?.getLong("BUILDING_ID", -1L)?.let { buildingId ->
             if (buildingId != -1L) {
                 viewModel.selectBuildingById(buildingId)
             }
@@ -149,8 +148,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
             locationService.startLocationUpdates()
         } else {
             // Request permissions
-            ActivityCompat.requestPermissions(
-                requireActivity(),
+            requestPermissions(
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
                 LOCATION_PERMISSION_REQUEST_CODE
             )
@@ -198,9 +196,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun updateUserMarker() {
-        currentLocation?.let { location ->
-            // No need to add a separate marker as we're using the built-in my location layer
-        }
+        // No need to add a separate marker as we're using the built-in my location layer
     }
 
     private fun showRouteTo(building: Building) {
@@ -406,7 +402,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
         
-        // Factory method para crear una nueva instancia con argumentos
+        // Factory method to create a new instance with arguments
         fun newInstance(buildingId: Long): MapFragment {
             val fragment = MapFragment()
             val args = Bundle()

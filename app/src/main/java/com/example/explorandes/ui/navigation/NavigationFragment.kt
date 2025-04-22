@@ -1,21 +1,23 @@
 package com.example.explorandes.ui.navigation
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.SearchView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.explorandes.MapActivity
 import com.example.explorandes.R
 import com.example.explorandes.adapters.CategoryAdapter
 import com.example.explorandes.adapters.PlaceAdapter
 import com.example.explorandes.models.Category
 import com.google.android.material.progressindicator.CircularProgressIndicator
-import android.widget.Button
 
 class NavigationFragment : Fragment() {
 
@@ -43,11 +45,10 @@ class NavigationFragment : Fragment() {
 
         val mapButton = view.findViewById<Button>(R.id.view_map_button)
         mapButton.setOnClickListener {
-        parentFragmentManager.beginTransaction()
-        .replace(R.id.fragment_container, MapFragment())
-        .addToBackStack("map")
-        .commit()
-}
+            // Start MapActivity without specific building
+            val intent = Intent(requireContext(), MapActivity::class.java)
+            startActivity(intent)
+        }
 
         // Setup RecyclerViews
         setupPlacesRecyclerView(placesRecyclerView)

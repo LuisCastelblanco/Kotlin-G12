@@ -1,7 +1,9 @@
 package com.example.explorandes
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.view.Window
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -15,8 +17,8 @@ import com.example.explorandes.models.Building
 import com.example.explorandes.models.Place
 import com.example.explorandes.viewmodels.BuildingDetailViewModel
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
-import android.view.Window
 
 class BuildingDetailActivity : AppCompatActivity() {
 
@@ -52,14 +54,7 @@ class BuildingDetailActivity : AppCompatActivity() {
 
         val fabMap = findViewById<FloatingActionButton>(R.id.fab_map)
         fabMap.setOnClickListener {
-            // Create map fragment with building ID
-            val mapFragment = MapFragment().apply {
-                arguments = Bundle().apply {
-                    putLong("BUILDING_ID", buildingId)
-                }
-            }
-            
-            // Start MapFragment as a new activity
+            // Start MapActivity with building ID
             val intent = Intent(this, MapActivity::class.java)
             intent.putExtra("BUILDING_ID", buildingId)
             startActivity(intent)

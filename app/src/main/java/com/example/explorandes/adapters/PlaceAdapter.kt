@@ -1,18 +1,19 @@
 package com.example.explorandes.adapters
 
+import android.content.Intent
+import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.fragment.app.FragmentActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.example.explorandes.MapActivity
 import com.example.explorandes.R
 import com.example.explorandes.models.Place
-import android.widget.Button
-import android.os.Bundle
-import androidx.fragment.app.MapFragment
-import androidx.fragment.app.FragmentActivity
 
 class PlaceAdapter(
     private var places: List<Place>,
@@ -31,7 +32,6 @@ class PlaceAdapter(
         return PlaceViewHolder(view)
     }
 
-
     override fun onBindViewHolder(holder: PlaceViewHolder, position: Int) {
         val place = places[position]
         holder.placeName.text = place.name
@@ -47,33 +47,26 @@ class PlaceAdapter(
             holder.placeImage.setImageResource(R.drawable.profile_placeholder)
         }
 
-        // Configura el click en el ítem completo
+        // Configure item click
         holder.itemView.setOnClickListener {
             onPlaceClick(place)
         }
         
-        // Configura el botón de navegación
+        // Configure navigation button
         holder.itemView.findViewById<Button>(R.id.btn_navigate).setOnClickListener {
-            // Primero obtener el buildingId desde el place
+            // First get buildingId from the place
             val buildingId = place.building?.id ?: place.buildingId
             
-            // Si tenemos un buildingId, iniciamos el fragmento de mapa
+            // If we have a buildingId, start the MapActivity
             if (buildingId != null) {
-                val mapFragment = MapFragment().apply {
-                    arguments = Bundle().apply {
-                        putLong("BUILDING_ID", buildingId)
-                    }
-                }
-                
-                // Obtenemos el fragmentManager y realizamos la transacción
-                val fragmentManager = (holder.itemView.context as? FragmentActivity)?.supportFragmentManager
-                fragmentManager?.beginTransaction()
-                    ?.replace(R.id.fragment_container, mapFragment)
-                    ?.addToBackStack("map")
-                    ?.commit()
+                val context = holder.itemView.context
+                val intent = Intent(context, MapActivity::class.java)
+                intent.putExtra("BUILDING_ID", buildingId)
+                context.startActivity(intent)
             }
         }
     }
+
     override fun getItemCount() = places.size
 
     // Method to update data when fetched from backend

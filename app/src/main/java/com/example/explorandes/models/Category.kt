@@ -1,7 +1,7 @@
 package com.example.explorandes.models
 
 data class Category(
-    val id: Int,
+    val id: Long,
     val name: String,
-    val iconResId: Int
+    val iconResId: Int = -1
 )

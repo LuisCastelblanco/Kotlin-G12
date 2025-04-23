@@ -1,23 +1,20 @@
 package com.example.explorandes.api
 
-import com.example.explorandes.models.AuthRequest
-import com.example.explorandes.models.AuthResponse
-import com.example.explorandes.models.RegisterRequest
-import com.example.explorandes.models.User
-import com.example.explorandes.models.Building
-import com.example.explorandes.models.Place
-import com.example.explorandes.models.Event
+import com.example.explorandes.models.*
 import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.*
 
 interface ApiService {
+
+    // Autenticación
     @POST("auth/login")
     suspend fun login(@Body authRequest: AuthRequest): Response<AuthResponse>
 
     @POST("auth/register")
     suspend fun register(@Body request: RegisterRequest): Response<AuthResponse>
 
+    // Usuarios
     @GET("api/users/{id}")
     suspend fun getUserById(@Path("id") id: Long): Response<User>
 
@@ -31,7 +28,7 @@ interface ApiService {
         @Part image: MultipartBody.Part
     ): Response<User>
 
-    // Building and place endpoints with correct paths
+    // Edificios
     @GET("api/buildings")
     suspend fun getAllBuildings(): Response<List<Building>>
 
@@ -47,6 +44,7 @@ interface ApiService {
         @Query("userLon") userLon: Double
     ): Response<List<Building>>
 
+    // Lugares
     @GET("api/places")
     suspend fun getAllPlaces(): Response<List<Place>>
 
@@ -62,6 +60,7 @@ interface ApiService {
     @GET("api/places/search")
     suspend fun searchPlaces(@Query("query") query: String): Response<List<Place>>
 
+    // Eventos
     @GET("api/events")
     suspend fun getAllEvents(): Response<List<Event>>
 

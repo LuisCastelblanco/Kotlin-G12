@@ -81,16 +81,16 @@
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
                             android:gravity="center_vertical"
+                            android:orientation="horizontal"
                             android:padding="8dp">
 
                             <ImageView
-                                android:layout_width="24dp"
+                                android:layout_width="wrap_content"
                                 android:layout_height="24dp"
-                                android:src="@drawable/ic_search"
                                 android:layout_marginStart="8dp"
-                                android:layout_marginEnd="8dp" />
+                                android:layout_marginEnd="8dp"
+                                android:src="@drawable/ic_search" />
 
                             <EditText
                                 android:id="@+id/search_input"
@@ -106,9 +106,9 @@
                                 android:id="@+id/filter_button"
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
-                                android:src="@drawable/ic_filter"
                                 android:layout_marginStart="8dp"
-                                android:layout_marginEnd="8dp" />
+                                android:layout_marginEnd="8dp"
+                                android:src="@drawable/ic_filter" />
                         </LinearLayout>
                     </androidx.cardview.widget.CardView>
                 </LinearLayout>
@@ -129,31 +129,31 @@
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp">
 
-                    <include layout="@layout/item_category" 
+                    <include layout="@layout/item_category"
                         android:id="@+id/category_buildings"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="16dp" />
 
-                    <include layout="@layout/item_category" 
+                    <include layout="@layout/item_category"
                         android:id="@+id/category_events"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="16dp" />
 
-                    <include layout="@layout/item_category" 
+                    <include layout="@layout/item_category"
                         android:id="@+id/category_food"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="16dp" />
 
-                    <include layout="@layout/item_category" 
+                    <include layout="@layout/item_category"
                         android:id="@+id/category_study"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="16dp" />
 
-                    <include layout="@layout/item_category" 
+                    <include layout="@layout/item_category"
                         android:id="@+id/category_services"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content" />
@@ -212,7 +212,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:layout_marginTop="8dp"
-                android:layout_marginBottom="80dp">
+                android:layout_marginBottom="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -250,6 +250,52 @@
                     android:paddingEnd="16dp"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                     tools:listitem="@layout/item_recommendation" />
+            </LinearLayout>
+
+            <!-- Events Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="80dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Eventos"
+                        android:textSize="18sp"
+                        android:textColor="@android:color/black"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/see_all_events"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ver todos"
+                        android:textColor="@color/colorPrimary"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/events_recycler"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipToPadding="false"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    tools:listitem="@layout/item_event" />
             </LinearLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

@@ -44,5 +44,6 @@
     <string name="map">Mapa</string>
     <string name="google_maps_key" translatable="false">AIzaSyA8JC9Rq6DveYWY4ylpomY5UOcxrd2qqak</string>
     <string name="view">View</string>
+    <string name="all">All</string>
 
 </resources>

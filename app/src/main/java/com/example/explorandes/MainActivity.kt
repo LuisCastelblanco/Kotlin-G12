@@ -73,7 +73,7 @@ class MainActivity : BaseActivity() {
     }
 }
 
-// Navigation controller
+// Navigation controller a
 @Composable
 fun AppNavigator() {
     val navController = rememberNavController()

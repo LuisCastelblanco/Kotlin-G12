@@ -20,7 +20,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
 
-class BuildingDetailActivity : AppCompatActivity() {
+class BuildingDetailActivity : BaseActivity() {
 
     private lateinit var viewModel: BuildingDetailViewModel
     private lateinit var placeAdapter: PlaceAdapter

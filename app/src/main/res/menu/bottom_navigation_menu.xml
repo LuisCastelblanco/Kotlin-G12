@@ -13,9 +13,9 @@
         android:icon="@drawable/ic_navigate"
         android:title="Navigate" />
     <item
-        android:id="@+id/navigation_notifications"
+        android:id="@+id/navigation_view"
         android:icon="@drawable/ic_notification"
-        android:title="Notifications" />
+        android:title="View" />
     <item
         android:id="@+id/navigation_account"
         android:icon="@drawable/ic_account"

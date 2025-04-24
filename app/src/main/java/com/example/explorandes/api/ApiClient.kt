@@ -16,7 +16,8 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private const val BASE_URL = "http://10.0.2.2:8080/"
+    //private const val BASE_URL = "http://10.0.2.2:8080/"
+    private const val BASE_URL = "http://192.168.10.22:8080/"
 
     // Make apiService directly accessible
     lateinit var apiService: ApiService

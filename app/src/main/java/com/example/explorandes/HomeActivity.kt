@@ -19,6 +19,7 @@ import com.example.explorandes.adapters.RecommendationAdapter
 import com.example.explorandes.api.ApiClient
 import com.example.explorandes.models.Recommendation
 import com.example.explorandes.models.RecommendationType
+import com.example.explorandes.ui.buildings.BuildingsListFragment
 import com.example.explorandes.utils.SessionManager
 import com.example.explorandes.viewmodels.HomeViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -138,25 +139,16 @@ class HomeActivity : AppCompatActivity() {
         // Buildings
         buildingsRecyclerView = findViewById(R.id.buildings_recycler)
         buildingsRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        buildingAdapter = BuildingAdapter(emptyList()) { building ->
-            startActivity(Intent(this, BuildingDetailActivity::class.java).apply {
-                putExtra("BUILDING_ID", building.id)
-            })
-        }
-        buildingsRecyclerView.adapter = buildingAdapter
-
-        // Recommendations
-        recommendationsRecyclerView = findViewById(R.id.recommendations_recycler)
-        recommendationsRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        val recommendations = listOf(
-            Recommendation(1L, "Medium", "Anestesia Alberto López", R.drawable.profile_placeholder, RecommendationType.PODCAST),
-            Recommendation(2L, "CHOBA", "Audición Alberto López", R.drawable.profile_placeholder, RecommendationType.DOCUMENTARY),
-            Recommendation(3L, "C4", "Audición María Pérez", R.drawable.profile_placeholder, RecommendationType.THEATER)
+        buildingAdapter = BuildingAdapter(
+            emptyList(),
+            onBuildingClicked = { building ->
+                val intent = Intent(this, BuildingDetailActivity::class.java).apply {
+                    putExtra("BUILDING_ID", building.id)
+                }
+                startActivity(intent)
+            }
         )
-        val recommendationAdapter = RecommendationAdapter(recommendations) {
-            Toast.makeText(this, "Selected: ${it.title}", Toast.LENGTH_SHORT).show()
-        }
-        recommendationsRecyclerView.adapter = recommendationAdapter
+        buildingsRecyclerView.adapter = buildingAdapter
 
         // Events
         eventsRecyclerView = findViewById(R.id.events_recycler)
@@ -184,8 +176,8 @@ class HomeActivity : AppCompatActivity() {
                 R.id.navigation_navigate -> {
                     startActivity(Intent(this, MapActivity::class.java)); true
                 }
-                R.id.navigation_notifications -> {
-                    Toast.makeText(this, getString(R.string.notifications), Toast.LENGTH_SHORT).show(); true
+                R.id.navigation_view -> {
+                    Toast.makeText(this, getString(R.string.view), Toast.LENGTH_SHORT).show(); true
                 }
                 R.id.navigation_account -> {
                     loadFragment(com.example.explorandes.ui.account.AccountFragment()); true
@@ -197,15 +189,28 @@ class HomeActivity : AppCompatActivity() {
 
     private fun setupClickListeners() {
         findViewById<TextView>(R.id.see_all_buildings).setOnClickListener {
-            findViewById<BottomNavigationView>(R.id.bottom_navigation).selectedItemId = R.id.navigation_navigate
-        }
+            // Show buildings list fragment
+            nestedScrollView.visibility = View.GONE
+            fragmentContainer.visibility = View.VISIBLE
 
-        findViewById<TextView>(R.id.see_all_recommendations).setOnClickListener {
-            Toast.makeText(this, "See all recommendations", Toast.LENGTH_SHORT).show()
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, BuildingsListFragment.newInstance())
+                .addToBackStack(null)
+                .commit()
         }
 
         findViewById<TextView>(R.id.see_all_events).setOnClickListener {
-            Toast.makeText(this, "See all events", Toast.LENGTH_SHORT).show()
+            // Show events list fragment using your existing implementation
+            nestedScrollView.visibility = View.GONE
+            fragmentContainer.visibility = View.VISIBLE
+
+            // Create and use the existing EventListFragment
+            val eventListFragment = com.example.explorandes.fragments.EventListFragment()
+
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, eventListFragment)
+                .addToBackStack(null)
+                .commit()
         }
     }
 

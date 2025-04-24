@@ -9,7 +9,7 @@ import com.bumptech.glide.Glide
 import com.example.explorandes.models.Event
 import com.google.android.material.appbar.MaterialToolbar
 
-class EventDetailActivity : AppCompatActivity() {
+class EventDetailActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_event_detail)

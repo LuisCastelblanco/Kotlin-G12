@@ -24,7 +24,7 @@ import com.example.explorandes.utils.SessionManager
 import com.example.explorandes.viewmodels.HomeViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
-class HomeActivity : AppCompatActivity() {
+class HomeActivity : BaseActivity() {
 
     private lateinit var buildingsRecyclerView: RecyclerView
     private lateinit var recommendationsRecyclerView: RecyclerView

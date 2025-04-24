@@ -32,9 +32,10 @@ import com.example.explorandes.models.AuthRequest
 import com.example.explorandes.models.RegisterRequest
 import com.example.explorandes.utils.SessionManager
 
-class MainActivity : ComponentActivity() {
 
-    private lateinit var lightSensorManager: LightSensorManager
+class MainActivity : BaseActivity() {
+
+
     private lateinit var sessionManager: SessionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,32 +58,13 @@ class MainActivity : ComponentActivity() {
             AppNavigator()
         }
 
-        // Initialize light sensor
-        lightSensorManager = LightSensorManager(this) { lux ->
-            adjustBrightness(lux)
-        }
-
-        lightSensorManager.startListening()
+        
 
         // Initialize ApiClient
         ApiClient.init(applicationContext)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        lightSensorManager.stopListening()
-    }
-
-    private fun adjustBrightness(lux: Float) {
-        val brightnessLevel = when {
-            lux < 20 -> 1.0f  // Increase brightness in low light
-            lux < 100 -> 0.7f
-            lux < 500 -> 0.5f
-            else -> 0.3f  // Reduce brightness in bright light
-        }
-
-        BrightnessController.setBrightness(this, brightnessLevel)
-    }
+    
 
     private fun startHomeActivity() {
         val intent = Intent(this, HomeActivity::class.java)
@@ -91,7 +73,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// Navigation controller
+// Navigation controller a
 @Composable
 fun AppNavigator() {
     val navController = rememberNavController()

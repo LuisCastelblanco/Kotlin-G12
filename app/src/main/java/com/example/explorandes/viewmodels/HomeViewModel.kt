@@ -5,7 +5,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.explorandes.api.ApiClient
 import com.example.explorandes.models.Building
+import com.example.explorandes.models.Event
 import com.example.explorandes.models.User
 import com.example.explorandes.models.UserLocation
 import com.example.explorandes.repositories.BuildingRepository
@@ -23,6 +25,9 @@ class HomeViewModel : ViewModel() {
 
     private val _buildings = MutableLiveData<List<Building>>()
     val buildings: LiveData<List<Building>> = _buildings
+
+    private val _events = MutableLiveData<List<Event>>()
+    val events: LiveData<List<Event>> = _events
 
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
@@ -83,6 +88,31 @@ class HomeViewModel : ViewModel() {
         }
     }
 
+    fun loadEvents() {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                _error.value = null
+                Log.d("HomeViewModel", "Loading events...")
+
+                val response = ApiClient.apiService.getAllEvents()
+                if (response.isSuccessful) {
+                    _events.value = response.body()
+                    Log.d("HomeViewModel", "Loaded ${response.body()?.size ?: 0} events")
+                } else {
+                    _error.value = "Failed to load events: ${response.code()} ${response.message()}"
+                    Log.e("HomeViewModel", "Error loading events: ${response.code()} ${response.message()}")
+                }
+            } catch (e: Exception) {
+                _error.value = "Failed to load events: ${e.localizedMessage}"
+                Log.e("HomeViewModel", "Error loading events", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+
     fun loadBuildingsByCategory(category: String) {
         viewModelScope.launch {
             try {
@@ -133,7 +163,6 @@ class HomeViewModel : ViewModel() {
                 _error.value = null
                 Log.d("HomeViewModel", "Searching buildings with query: $query")
 
-                // This implements client-side filtering since there's no dedicated search endpoint
                 val searchResults = if (query.isEmpty()) {
                     buildingRepository.getAllBuildings()
                 } else {

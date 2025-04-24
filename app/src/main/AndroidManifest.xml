@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.explorandes">
 
-    <!-- Add necessary permissions for location and maps -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -21,7 +20,6 @@
         android:theme="@style/Theme.ExplorAndes"
         android:usesCleartextTraffic="true">
 
-        <!-- Add Google Maps API key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyA8JC9Rq6DveYWY4ylpomY5UOcxrd2qqak" />
@@ -44,7 +42,6 @@
             android:name=".MainActivity"
             android:exported="false" />
 
-        <!-- Add BuildingDetailActivity -->
         <activity
             android:name=".BuildingDetailActivity"
             android:exported="false" />
@@ -54,6 +51,10 @@
             android:exported="false"
             android:label="@string/map"
             android:theme="@style/Theme.ExplorAndes" />
+
+        <activity
+            android:name=".EventDetailActivity"
+            android:exported="false" />
 
     </application>
 

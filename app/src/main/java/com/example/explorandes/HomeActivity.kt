@@ -162,7 +162,9 @@ class HomeActivity : AppCompatActivity() {
         eventsRecyclerView = findViewById(R.id.events_recycler)
         eventsRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         eventAdapter = EventAdapter { event ->
-            Toast.makeText(this, "Evento: ${event.title}", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, EventDetailActivity::class.java)
+            intent.putExtra("EVENT", event)
+            startActivity(intent)
         }
         eventsRecyclerView.adapter = eventAdapter
     }

@@ -17,12 +17,14 @@ import com.example.explorandes.adapters.BuildingAdapter
 import com.example.explorandes.adapters.EventAdapter
 import com.example.explorandes.adapters.RecommendationAdapter
 import com.example.explorandes.api.ApiClient
+import com.example.explorandes.fragments.EventListFragment
 import com.example.explorandes.models.Recommendation
 import com.example.explorandes.models.RecommendationType
 import com.example.explorandes.ui.buildings.BuildingsListFragment
 import com.example.explorandes.utils.SessionManager
 import com.example.explorandes.viewmodels.HomeViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import de.hdodenhof.circleimageview.CircleImageView
 
 class HomeActivity : BaseActivity() {
 
@@ -52,6 +54,7 @@ class HomeActivity : BaseActivity() {
         setupViewModelObservers()
         viewModel.loadUserData(sessionManager)
         initializeUI()
+
     }
 
     private fun setupViewModelObservers() {
@@ -102,12 +105,19 @@ class HomeActivity : BaseActivity() {
     }
 
     private fun setupCategoryIcons() {
+        val categoryAll = findViewById<View>(R.id.category_all)
         val categoryBuildings = findViewById<View>(R.id.category_buildings)
         val categoryFood = findViewById<View>(R.id.category_food)
         val categoryServices = findViewById<View>(R.id.category_services)
 
         findViewById<View>(R.id.category_events).visibility = View.GONE
         findViewById<View>(R.id.category_study).visibility = View.GONE
+
+        // Set up All category
+        categoryAll.findViewById<ImageView>(R.id.category_icon)
+            .setImageResource(R.drawable.ic_all)
+        categoryAll.findViewById<TextView>(R.id.category_name)
+            .text = getString(R.string.all)
 
         categoryBuildings.findViewById<ImageView>(R.id.category_icon)
             .setImageResource(R.drawable.ic_building)
@@ -124,12 +134,19 @@ class HomeActivity : BaseActivity() {
         categoryServices.findViewById<TextView>(R.id.category_name)
             .text = getString(R.string.services)
 
+        // Add click listener for All category
+        categoryAll.setOnClickListener {
+            viewModel.loadBuildings() // This loads all buildings without category filtering
+        }
+
         categoryBuildings.setOnClickListener {
             viewModel.loadBuildingsByCategory("Buildings")
         }
+
         categoryFood.setOnClickListener {
             viewModel.loadBuildingsByCategory("Food")
         }
+
         categoryServices.setOnClickListener {
             viewModel.loadBuildingsByCategory("Services")
         }
@@ -199,13 +216,13 @@ class HomeActivity : BaseActivity() {
                 .commit()
         }
 
+        // In your setupClickListeners function
         findViewById<TextView>(R.id.see_all_events).setOnClickListener {
-            // Show events list fragment using your existing implementation
+            // Show events list fragment
             nestedScrollView.visibility = View.GONE
             fragmentContainer.visibility = View.VISIBLE
 
-            // Create and use the existing EventListFragment
-            val eventListFragment = com.example.explorandes.fragments.EventListFragment()
+            val eventListFragment = EventListFragment.newInstance()
 
             supportFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, eventListFragment)

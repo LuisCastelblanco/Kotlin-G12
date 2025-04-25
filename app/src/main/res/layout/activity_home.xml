@@ -87,6 +87,12 @@
                     android:paddingEnd="16dp">
 
                     <include layout="@layout/item_category"
+                        android:id="@+id/category_all"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="16dp" />
+
+                    <include layout="@layout/item_category"
                         android:id="@+id/category_buildings"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"

@@ -30,10 +30,8 @@ class EventDetailFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize viewModel using standard pattern (no Hilt)
-        val eventRepository = EventRepository.getInstance(
-            ApiClient.retrofit // Access retrofit directly from ApiClient
-        )
+        // Initialize viewModel using the apiService directly
+        val eventRepository = EventRepository(ApiClient.apiService)
         val factory = EventViewModel.Factory(eventRepository)
         viewModel = ViewModelProvider(this, factory)[EventViewModel::class.java]
     }

@@ -1,5 +1,6 @@
 package com.example.explorandes.fragments
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -10,6 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.explorandes.EventDetailActivity
 import com.example.explorandes.R
 import com.example.explorandes.adapters.EventAdapter
 import com.example.explorandes.api.ApiClient
@@ -30,10 +32,8 @@ class EventListFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize viewModel using standard pattern (no Hilt)
-        val eventRepository = EventRepository.getInstance(
-            ApiClient.retrofit // Access retrofit directly from ApiClient
-        )
+        // Create a simple repository that uses ApiClient.apiService directly
+        val eventRepository = EventRepository(ApiClient.apiService)
         val factory = EventViewModel.Factory(eventRepository)
         viewModel = ViewModelProvider(this, factory)[EventViewModel::class.java]
     }
@@ -49,6 +49,9 @@ class EventListFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Hide the top-right buttons
+        binding.toolbar?.menu?.clear() // If using a toolbar with menu items
 
         setupRecyclerView()
         setupFilterChips()
@@ -172,12 +175,35 @@ class EventListFragment : Fragment() {
     }
 
     private fun navigateToEventDetail(event: Event) {
-        viewModel.setSelectedEvent(event)
-        findNavController().navigate(R.id.action_eventListFragment_to_eventDetailFragment)
+        try {
+            // Store the selected event in the ViewModel
+            viewModel.setSelectedEvent(event)
+
+            // Check if we're using the Navigation Component (in a fragment container)
+            if (findNavController().currentDestination?.id == R.id.eventListFragment) {
+                // Use navigation component
+                findNavController().navigate(R.id.action_eventListFragment_to_eventDetailFragment)
+            } else {
+                // Fallback to Activity-based approach
+                val intent = Intent(requireContext(), EventDetailActivity::class.java).apply {
+                    putExtra("EVENT", event) // Assuming Event is Parcelable
+                }
+                startActivity(intent)
+            }
+        } catch (e: Exception) {
+            // Another fallback if navigation fails
+            Toast.makeText(requireContext(),
+                "Error navigating to event details: ${e.message}",
+                Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+    // Add to EventListFragment.kt
+    companion object {
+        fun newInstance() = EventListFragment()
     }
 }

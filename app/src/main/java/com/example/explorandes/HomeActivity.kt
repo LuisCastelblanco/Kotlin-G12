@@ -17,6 +17,7 @@ import com.example.explorandes.adapters.BuildingAdapter
 import com.example.explorandes.adapters.EventAdapter
 import com.example.explorandes.adapters.RecommendationAdapter
 import com.example.explorandes.api.ApiClient
+import com.example.explorandes.fragments.EventListFragment
 import com.example.explorandes.models.Recommendation
 import com.example.explorandes.models.RecommendationType
 import com.example.explorandes.ui.buildings.BuildingsListFragment
@@ -215,13 +216,13 @@ class HomeActivity : BaseActivity() {
                 .commit()
         }
 
+        // In your setupClickListeners function
         findViewById<TextView>(R.id.see_all_events).setOnClickListener {
-            // Show events list fragment using your existing implementation
+            // Show events list fragment
             nestedScrollView.visibility = View.GONE
             fragmentContainer.visibility = View.VISIBLE
 
-            // Create and use the existing EventListFragment
-            val eventListFragment = com.example.explorandes.fragments.EventListFragment()
+            val eventListFragment = EventListFragment.newInstance()
 
             supportFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, eventListFragment)

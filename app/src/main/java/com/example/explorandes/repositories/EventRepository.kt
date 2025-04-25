@@ -23,6 +23,12 @@ class EventRepository(private val apiService: ApiService) {
                 ).also { instance = it }
             }
         }
+        // Add a new getInstance method that accepts ApiService directly
+        fun getInstance(apiService: ApiService): EventRepository {
+            return instance ?: synchronized(this) {
+                instance ?: EventRepository(apiService).also { instance = it }
+            }
+        }
     }
 
     fun getAllEvents(): Flow<NetworkResult<List<Event>>> = flow {

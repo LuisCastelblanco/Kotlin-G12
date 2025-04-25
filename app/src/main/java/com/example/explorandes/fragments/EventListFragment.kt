@@ -30,10 +30,8 @@ class EventListFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize viewModel using standard pattern (no Hilt)
-        val eventRepository = EventRepository.getInstance(
-            ApiClient.retrofit // Access retrofit directly from ApiClient
-        )
+        // Create a simple repository that uses ApiClient.apiService directly
+        val eventRepository = EventRepository(ApiClient.apiService)
         val factory = EventViewModel.Factory(eventRepository)
         viewModel = ViewModelProvider(this, factory)[EventViewModel::class.java]
     }
@@ -179,5 +177,9 @@ class EventListFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+    // Add to EventListFragment.kt
+    companion object {
+        fun newInstance() = EventListFragment()
     }
 }

@@ -17,7 +17,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.explorandes.adapters.BuildingAdapter
 import com.example.explorandes.adapters.EventAdapter
-import com.example.explorandes.adapters.RecommendationAdapter
 import com.example.explorandes.api.ApiClient
 import com.example.explorandes.fragments.EventListFragment
 import com.example.explorandes.models.Recommendation
@@ -122,14 +121,35 @@ class HomeActivity : BaseActivity() {
         }
     }
 
+    // ✅ SETUP CATEGORY ICONS ACTUALIZADO:
     private fun setupCategoryIcons() {
         val categoryAll = findViewById<View>(R.id.category_all)
         val categoryBuildings = findViewById<View>(R.id.category_buildings)
+        val categoryEvents = findViewById<View>(R.id.category_events)
         val categoryFood = findViewById<View>(R.id.category_food)
+        val categoryStudy = findViewById<View>(R.id.category_study)
         val categoryServices = findViewById<View>(R.id.category_services)
 
-        findViewById<View>(R.id.category_events).visibility = View.GONE
-        findViewById<View>(R.id.category_study).visibility = View.GONE
+        categoryAll.findViewById<ImageView>(R.id.category_icon).setImageResource(R.drawable.ic_home)
+        categoryAll.findViewById<TextView>(R.id.category_name).text = getString(R.string.all)
+
+        categoryBuildings.findViewById<ImageView>(R.id.category_icon).setImageResource(R.drawable.ic_building)
+        categoryBuildings.findViewById<TextView>(R.id.category_name).text = getString(R.string.buildings)
+
+        categoryEvents.findViewById<ImageView>(R.id.category_icon).setImageResource(R.drawable.ic_event)
+        categoryEvents.findViewById<TextView>(R.id.category_name).text = getString(R.string.events)
+
+        categoryFood.findViewById<ImageView>(R.id.category_icon).setImageResource(R.drawable.ic_food)
+        categoryFood.findViewById<TextView>(R.id.category_name).text = getString(R.string.food_rest)
+
+        categoryStudy.findViewById<ImageView>(R.id.category_icon).setImageResource(R.drawable.ic_study)
+        categoryStudy.findViewById<TextView>(R.id.category_name).text = getString(R.string.study_spaces)
+
+        categoryServices.findViewById<ImageView>(R.id.category_icon).setImageResource(R.drawable.ic_services)
+        categoryServices.findViewById<TextView>(R.id.category_name).text = getString(R.string.services)
+
+        categoryEvents.visibility = View.GONE
+        categoryStudy.visibility = View.GONE
 
         categoryAll.setOnClickListener { viewModel.loadBuildings() }
         categoryBuildings.setOnClickListener { viewModel.loadBuildingsByCategory("Buildings") }

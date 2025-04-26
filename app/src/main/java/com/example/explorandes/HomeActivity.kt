@@ -8,7 +8,6 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.getSystemService
 import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
@@ -29,7 +28,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 class HomeActivity : BaseActivity() {
 
     private lateinit var buildingsRecyclerView: RecyclerView
-    private lateinit var recommendationsRecyclerView: RecyclerView
     private lateinit var eventsRecyclerView: RecyclerView
     private lateinit var nestedScrollView: NestedScrollView
     private lateinit var noConnectionView: View
@@ -121,7 +119,6 @@ class HomeActivity : BaseActivity() {
         }
     }
 
-    // ✅ SETUP CATEGORY ICONS ACTUALIZADO:
     private fun setupCategoryIcons() {
         val categoryAll = findViewById<View>(R.id.category_all)
         val categoryBuildings = findViewById<View>(R.id.category_buildings)
@@ -204,17 +201,7 @@ class HomeActivity : BaseActivity() {
                 .commit()
         }
 
-        findViewById<TextView>(R.id.see_all_events).setOnClickListener {
-            nestedScrollView.visibility = View.GONE
-            fragmentContainer.visibility = View.VISIBLE
-
-            val eventListFragment = EventListFragment.newInstance()
-
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, eventListFragment)
-                .addToBackStack(null)
-                .commit()
-        }
+        // YA NO EXISTE CLICK LISTENER PARA see_all_events 🚀
     }
 
     private fun showHomeContent() {

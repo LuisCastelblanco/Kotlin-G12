@@ -37,10 +37,28 @@ class HomeActivity : BaseActivity() {
     private lateinit var viewModel: HomeViewModel
     private lateinit var buildingAdapter: BuildingAdapter
     private lateinit var eventAdapter: EventAdapter
+    private lateinit var connectivityManager: ConnectivityManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
+        // Inicializar el ConnectivityManager
+        connectivityManager = (application as ExplorAndesApplication).connectivityManager
+
+         // Observar cambios en la conectividad
+        lifecycleScope.launch {
+        connectivityManager.isNetworkAvailable.collect { isAvailable ->
+            if (isAvailable) {
+                hideNoConnection()
+                // Cuando la conexión regresa, recargar datos
+                if (::viewModel.isInitialized) {
+                    viewModel.refreshData()
+                }
+            } else {
+                showNoConnection()
+            }
+        }
+    }
 
         ApiClient.init(applicationContext)
         sessionManager = SessionManager(this)
@@ -250,5 +268,9 @@ class HomeActivity : BaseActivity() {
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
+    }
+
+    private fun hasInternetConnection(): Boolean {
+        return connectivityManager.isCurrentlyConnected()
     }
 }

@@ -2,75 +2,141 @@ package com.example.explorandes.repositories
 
 import android.util.Log
 import com.example.explorandes.api.ApiClient
+import com.example.explorandes.database.dao.BuildingDao
+import com.example.explorandes.database.entity.BuildingEntity
 import com.example.explorandes.models.Building
+import com.example.explorandes.utils.NetworkResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import java.io.IOException
 
-class BuildingRepository {
+class BuildingRepository(private val buildingDao: BuildingDao) {
 
-    suspend fun getAllBuildings(): List<Building> {
+    suspend fun getAllBuildings(): Flow<NetworkResult<List<Building>>> = flow {
+        emit(NetworkResult.Loading())
+        
         try {
-            val response = ApiClient.apiService.getAllBuildings()
-            if (response.isSuccessful && response.body() != null) {
-                val buildings = response.body()!!
-                Log.d("BuildingRepository", "Successfully fetched ${buildings.size} buildings")
-                return buildings
-            } else {
-                Log.e("BuildingRepository", "Error fetching buildings: ${response.code()} - ${response.message()}")
-                return emptyList()
+            // Primero emitir datos de la caché local
+            val localBuildings = buildingDao.getAllBuildings().map { entities ->
+                entities.map { it.toModel() }
             }
+            
+            // Intentar cargar datos remotos
+            val response = ApiClient.apiService.getAllBuildings()
+            if (response.isSuccessful) {
+                val buildings = response.body()
+                if (buildings != null) {
+                    // Guardar en la base de datos local
+                    val buildingEntities = buildings.map { BuildingEntity.fromModel(it) }
+                    buildingDao.insertBuildings(buildingEntities)
+                    emit(NetworkResult.Success(buildings))
+                } else {
+                    emit(NetworkResult.Error("Response body was null"))
+                }
+            } else {
+                // En caso de error, usar datos locales
+                emit(NetworkResult.Error("Error: ${response.code()} - ${response.message()}", null))
+            }
+        } catch (e: IOException) {
+            // Error de red, usar datos locales
+            Log.e("BuildingRepository", "Network error", e)
+            emit(NetworkResult.Error("Network error: ${e.localizedMessage}", null))
         } catch (e: Exception) {
-            Log.e("BuildingRepository", "Exception fetching buildings", e)
-            return emptyList()
+            Log.e("BuildingRepository", "Error fetching buildings", e)
+            emit(NetworkResult.Error("Error: ${e.localizedMessage}", null))
         }
-    }
+    }.flowOn(Dispatchers.IO)
 
-    suspend fun getBuildingById(id: Long): Building? {
+    suspend fun getBuildingById(id: Long): Flow<NetworkResult<Building>> = flow {
+        emit(NetworkResult.Loading())
+        
         try {
+            // Primero intentar desde local
+            val localBuilding = buildingDao.getBuildingById(id)
+            if (localBuilding != null) {
+                emit(NetworkResult.Success(localBuilding.toModel()))
+            }
+            
+            // Intentar remoto
             val response = ApiClient.apiService.getBuildingById(id)
             if (response.isSuccessful) {
                 val building = response.body()
-                Log.d("BuildingRepository", "Successfully fetched building with ID $id")
-                return building
+                if (building != null) {
+                    // Guardar en local
+                    buildingDao.insertBuilding(BuildingEntity.fromModel(building))
+                    emit(NetworkResult.Success(building))
+                } else {
+                    if (localBuilding == null) {
+                        emit(NetworkResult.Error("Building not found"))
+                    }
+                }
             } else {
-                Log.e("BuildingRepository", "Error fetching building $id: ${response.code()} - ${response.message()}")
-                return null
+                if (localBuilding == null) {
+                    emit(NetworkResult.Error("Error: ${response.code()} - ${response.message()}"))
+                }
+            }
+        } catch (e: IOException) {
+            // Error de red, usar datos locales si están disponibles
+            if (localBuilding == null) {
+                emit(NetworkResult.Error("Network error: ${e.localizedMessage}"))
             }
         } catch (e: Exception) {
-            Log.e("BuildingRepository", "Exception fetching building $id", e)
-            return null
+            if (localBuilding == null) {
+                emit(NetworkResult.Error("Error: ${e.localizedMessage}"))
+            }
         }
-    }
+    }.flowOn(Dispatchers.IO)
 
-    suspend fun getBuildingsByCategory(category: String): List<Building> {
+    suspend fun getBuildingsByCategory(category: String): Flow<NetworkResult<List<Building>>> = flow {
+        emit(NetworkResult.Loading())
+        
         try {
+            // Primero emitir datos locales
+            val localBuildings = buildingDao.getBuildingsByCategory(category).map { entities ->
+                entities.map { it.toModel() }
+            }
+            
+            // Intentar cargar remotos
             val response = ApiClient.apiService.getBuildingsByCategory(category)
-            if (response.isSuccessful && response.body() != null) {
-                val buildings = response.body()!!
-                Log.d("BuildingRepository", "Successfully fetched ${buildings.size} buildings in category $category")
-                return buildings
+            if (response.isSuccessful) {
+                val buildings = response.body()
+                if (buildings != null) {
+                    // Guardar en local
+                    val buildingEntities = buildings.map { BuildingEntity.fromModel(it) }
+                    buildingDao.insertBuildings(buildingEntities)
+                    emit(NetworkResult.Success(buildings))
+                } else {
+                    emit(NetworkResult.Error("Response body was null"))
+                }
             } else {
-                Log.e("BuildingRepository", "Error fetching buildings by category $category: ${response.code()} - ${response.message()}")
-                return emptyList()
+                emit(NetworkResult.Error("Error: ${response.code()} - ${response.message()}"))
             }
+        } catch (e: IOException) {
+            // Error de red, usar datos locales
+            Log.e("BuildingRepository", "Network error", e)
+            emit(NetworkResult.Error("Network error: ${e.localizedMessage}"))
         } catch (e: Exception) {
-            Log.e("BuildingRepository", "Exception fetching buildings by category $category", e)
-            return emptyList()
+            Log.e("BuildingRepository", "Error fetching buildings", e)
+            emit(NetworkResult.Error("Error: ${e.localizedMessage}"))
         }
-    }
+    }.flowOn(Dispatchers.IO)
 
-    suspend fun getNearbyBuildings(latitude: Double, longitude: Double): List<Building> {
+    suspend fun searchBuildings(query: String): Flow<NetworkResult<List<Building>>> = flow {
+        emit(NetworkResult.Loading())
+        
         try {
-            val response = ApiClient.apiService.getNearbyBuildings(latitude, longitude)
-            if (response.isSuccessful && response.body() != null) {
-                val buildings = response.body()!!
-                Log.d("BuildingRepository", "Successfully fetched ${buildings.size} nearby buildings")
-                return buildings
-            } else {
-                Log.e("BuildingRepository", "Error fetching nearby buildings: ${response.code()} - ${response.message()}")
-                return emptyList()
+            // Buscar en local
+            val localBuildings = buildingDao.searchBuildings(query).map { entities ->
+                entities.map { it.toModel() }
             }
+            
+             emit(NetworkResult.Success(localBuildings.first()))
         } catch (e: Exception) {
-            Log.e("BuildingRepository", "Exception fetching nearby buildings", e)
-            return emptyList()
+            Log.e("BuildingRepository", "Error searching buildings", e)
+            emit(NetworkResult.Error("Error: ${e.localizedMessage}"))
         }
-    }
+    }.flowOn(Dispatchers.IO)
 }

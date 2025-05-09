@@ -5,11 +5,11 @@ import android.content.Context
 import android.util.Log
 import com.example.explorandes.database.AppDatabase
 import com.example.explorandes.services.LightSensorManager
-import com.example.explorandes.utils.ConnectivityManager
+import com.example.explorandes.utils.ConnectivityHelper
 
 class ExplorAndesApplication : Application() {
     lateinit var lightSensorManager: LightSensorManager
-    lateinit var connectivityManager: ConnectivityManager
+    lateinit var connectivityHelper: ConnectivityHelper
     lateinit var database: AppDatabase
     
     override fun onCreate() {
@@ -19,8 +19,8 @@ class ExplorAndesApplication : Application() {
             Log.d("ExplorAndesApp", "Light sensor reading: $lux lux")
         }
         
-        // Inicializar ConnectivityManager
-        connectivityManager = ConnectivityManager(this)
+        // Inicializar ConnectivityHelper
+        connectivityHelper = ConnectivityHelper(this)
         
         // Inicializar la base de datos
         database = AppDatabase.getInstance(this)

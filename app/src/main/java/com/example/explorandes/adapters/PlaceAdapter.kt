@@ -52,19 +52,19 @@ class PlaceAdapter(
             onPlaceClick(place)
         }
         
-        // Configure navigation button
-        holder.itemView.findViewById<Button>(R.id.btn_navigate).setOnClickListener {
-            // First get buildingId from the place
-            val buildingId = place.building?.id ?: place.buildingId
-            
-            // If we have a buildingId, start the MapActivity
-            if (buildingId != null) {
-                val context = holder.itemView.context
-                val intent = Intent(context, MapActivity::class.java)
-                intent.putExtra("BUILDING_ID", buildingId)
-                context.startActivity(intent)
-            }
-        }
+//        // Configure navigation button
+//        holder.itemView.findViewById<Button>(R.id.btn_navigate).setOnClickListener {
+//            // First get buildingId from the place
+//            val buildingId = place.building?.id ?: place.buildingId
+//
+//            // If we have a buildingId, start the MapActivity
+//            if (buildingId != null) {
+//                val context = holder.itemView.context
+//                val intent = Intent(context, MapActivity::class.java)
+//                intent.putExtra("BUILDING_ID", buildingId)
+//                context.startActivity(intent)
+//            }
+//        }
     }
 
     override fun getItemCount() = places.size

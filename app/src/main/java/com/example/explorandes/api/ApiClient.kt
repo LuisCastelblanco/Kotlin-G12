@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit
 
 object ApiClient {
     //private const val BASE_URL = "http://10.0.2.2:8080/"
-    private const val BASE_URL = "http://172.20.10.6:8080/"
+    private const val BASE_URL = "https://explorandes-backend-914593105719.us-central1.run.app"
 
     // Make apiService directly accessible
     lateinit var apiService: ApiService

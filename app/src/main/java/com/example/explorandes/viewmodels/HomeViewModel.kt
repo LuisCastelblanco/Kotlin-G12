@@ -15,10 +15,10 @@ import com.example.explorandes.repositories.UserRepository
 import com.example.explorandes.utils.SessionManager
 import kotlinx.coroutines.launch
 
-class HomeViewModel : ViewModel() {
+class HomeViewModel(private val context: Context) : ViewModel() {
+    private val buildingRepository = BuildingRepository(context)
 
     private val userRepository = UserRepository()
-    private val buildingRepository = BuildingRepository()
 
     private val _user = MutableLiveData<User>()
     val user: LiveData<User> = _user

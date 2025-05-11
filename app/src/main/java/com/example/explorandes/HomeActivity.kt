@@ -23,7 +23,6 @@ import com.example.explorandes.models.RecommendationType
 import com.example.explorandes.ui.buildings.BuildingsListFragment
 import com.example.explorandes.utils.SessionManager
 import com.example.explorandes.viewmodels.HomeViewModel
-import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class HomeActivity : BaseActivity() {
 
@@ -36,10 +35,14 @@ class HomeActivity : BaseActivity() {
     private lateinit var viewModel: HomeViewModel
     private lateinit var buildingAdapter: BuildingAdapter
     private lateinit var eventAdapter: EventAdapter
+    private lateinit var app: ExplorAndesApplication
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
+
+        // Inicializar ExplorAndesApplication
+        app = application as ExplorAndesApplication
 
         ApiClient.init(applicationContext)
         sessionManager = SessionManager(this)
@@ -55,19 +58,45 @@ class HomeActivity : BaseActivity() {
 
         if (!hasInternetConnection()) {
             showNoConnection()
-            return
         }
 
+        // Use ViewModelProvider para inicializar el ViewModel sin parámetros adicionales
         viewModel = ViewModelProvider(this)[HomeViewModel::class.java]
+        
         setupViewModelObservers()
         viewModel.loadUserData(sessionManager)
         initializeUI()
+        
+        // Agregar botón para reintentar conexión
+        noConnectionView.findViewById<View>(R.id.retry_button)?.setOnClickListener {
+            if (hasInternetConnection()) {
+                hideNoConnection()
+                refreshData()
+            } else {
+                Toast.makeText(this, "Aún sin conexión a Internet", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    
+    private fun refreshData() {
+        viewModel.loadBuildings()
+        viewModel.loadEvents()
     }
 
     private fun showNoConnection() {
         noConnectionView.visibility = View.VISIBLE
         nestedScrollView.visibility = View.GONE
         fragmentContainer.visibility = View.GONE
+    }
+    
+    private fun hideNoConnection() {
+        noConnectionView.visibility = View.GONE
+        // Muestra el contenido que estaba visible anteriormente
+        if (supportFragmentManager.findFragmentById(R.id.fragment_container) != null) {
+            fragmentContainer.visibility = View.VISIBLE
+        } else {
+            nestedScrollView.visibility = View.VISIBLE
+        }
     }
 
     private fun hasInternetConnection(): Boolean {
@@ -99,6 +128,13 @@ class HomeActivity : BaseActivity() {
         viewModel.events.observe(this) { events ->
             eventAdapter.submitList(events)
         }
+        
+        viewModel.isLoading.observe(this) { isLoading ->
+            // Si está cargando y no hay datos aún, mostrar algún indicador de carga
+            if (isLoading && viewModel.buildings.value?.isEmpty() == true) {
+                // Mostrar indicador de carga si es necesario
+            }
+        }
     }
 
     private fun initializeUI() {
@@ -114,7 +150,7 @@ class HomeActivity : BaseActivity() {
         viewModel.loadEvents()
 
         if (intent.getBooleanExtra("OPEN_NAVIGATION", false)) {
-            findViewById<BottomNavigationView>(R.id.bottom_navigation)
+            findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
                 .selectedItemId = R.id.navigation_navigate
         }
     }
@@ -175,7 +211,7 @@ class HomeActivity : BaseActivity() {
     }
 
     private fun setupBottomNavigation() {
-        val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        val bottomNavigation = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
         bottomNavigation.selectedItemId = R.id.navigation_home
 
         bottomNavigation.setOnItemSelectedListener { item ->
@@ -200,8 +236,6 @@ class HomeActivity : BaseActivity() {
                 .addToBackStack(null)
                 .commit()
         }
-
-        // YA NO EXISTE CLICK LISTENER PARA see_all_events 🚀
     }
 
     private fun showHomeContent() {
@@ -224,5 +258,15 @@ class HomeActivity : BaseActivity() {
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
+    }
+    
+    // Verificar conexión cuando la actividad vuelve a estar visible
+    override fun onResume() {
+        super.onResume()
+        // Si no teníamos conexión pero ahora sí, ocultar mensaje
+        if (noConnectionView.visibility == View.VISIBLE && hasInternetConnection()) {
+            hideNoConnection()
+            refreshData()
+        }
     }
 }

@@ -22,7 +22,6 @@ class MapActivity : BaseActivity() {
                     .replace(R.id.map_container, mapFragment)
                     .commit()
             } else {
-                // If no building ID, just show the map
                 supportFragmentManager.beginTransaction()
                     .replace(R.id.map_container, MapFragment())
                     .commit()

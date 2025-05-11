@@ -38,6 +38,7 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -52,19 +53,24 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     private lateinit var estimatedTimeTextView: TextView
     private lateinit var bottomSheetLayout: LinearLayout
     private lateinit var progressBar: ProgressBar
+    private lateinit var noConnectionView: View
 
     private var selectedBuilding: Building? = null
     private var currentLocation: LatLng? = null
+    private var offlineMode = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+): View? {  
         val view = inflater.inflate(R.layout.fragment_map, container, false)
 
-        // Initialize ViewModel
-        viewModel = ViewModelProvider(this).get(MapViewModel::class.java)
+        // Initialize ViewModel with context
+        viewModel = ViewModelProvider(
+            this,
+            MapViewModel.Factory(requireContext())
+        )[MapViewModel::class.java]
 
         // Initialize LocationService
         locationService = LocationService(requireContext())
@@ -83,6 +89,35 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         routeInfoTextView = view.findViewById(R.id.route_info)
         estimatedTimeTextView = view.findViewById(R.id.estimated_time)
         progressBar = view.findViewById(R.id.progress_bar)
+        
+        // Fix the offline view setup - completely rewritten
+        val inflatedOfflineView = layoutInflater.inflate(R.layout.layout_no_connection, null)
+        inflatedOfflineView.visibility = View.GONE
+        
+        // Find and set the message
+        val messageTextView = inflatedOfflineView.findViewById<android.widget.TextView>(R.id.no_connection_message)
+        if (messageTextView != null) {
+            messageTextView.text = "Internet connection is required for navigation.\nBasic map features are still available."
+        }
+        
+        // Add to parent
+        (view as? ViewGroup)?.addView(inflatedOfflineView)
+        noConnectionView = inflatedOfflineView
+        
+        val retryButton = inflatedOfflineView.findViewById<Button>(R.id.retry_button)
+        retryButton?.setOnClickListener {
+            val connected = viewModel.checkConnectivity()
+            if (connected) {
+                offlineMode = false
+                showMapContent()
+                // Reload selected building if any
+                selectedBuilding?.let { building ->
+                    showRouteTo(building)
+                }
+            } else {
+                Toast.makeText(context, "Still no internet connection", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         // Set up my location button
         val myLocationButton = view.findViewById<FloatingActionButton>(R.id.my_location_button)
@@ -129,6 +164,40 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                 // If there's a selected building, update the route
                 selectedBuilding?.let {
                     showRouteTo(it)
+                }
+            }
+        }
+        
+        // Observe connectivity status
+        viewModel.isConnected.observe(viewLifecycleOwner) { isConnected ->
+            offlineMode = !isConnected
+            
+            if (isConnected) {
+                showMapContent()
+                // Show a short message
+                Snackbar.make(
+                    requireView(),
+                    "Internet connection restored",
+                    Snackbar.LENGTH_SHORT
+                ).show()
+                
+                // Reload the route if a building is selected
+                selectedBuilding?.let {
+                    showRouteTo(it)
+                }
+            } else {
+                // Only show the warning for routing features
+                if (selectedBuilding != null) {
+                    showOfflineIndicator()
+                } else {
+                    // For basic viewing, just show a snackbar
+                    Snackbar.make(
+                        requireView(),
+                        "You're offline. Navigation features limited.",
+                        Snackbar.LENGTH_LONG
+                    ).setAction("Retry") {
+                        viewModel.checkConnectivity()
+                    }.show()
                 }
             }
         }
@@ -188,6 +257,9 @@ class MapFragment : Fragment(), OnMapReadyCallback {
             // If the style file doesn't exist, just continue without styling
             Log.e("MapFragment", "Error setting map style: ", e)
         }
+        
+        // Check connectivity status
+        viewModel.checkConnectivity()
     }
 
     private fun requestLocationPermissions() {
@@ -282,10 +354,15 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun updateUserMarker() {
-        // No need to add a separate marker as we're using the built-in my location layer
     }
 
     private fun showRouteTo(building: Building) {
+        // Check if we're in offline mode
+        if (offlineMode) {
+            showOfflineIndicator()
+            return
+        }
+        
         // Get current location
         val currentLoc = currentLocation
         if (currentLoc == null) {
@@ -599,5 +676,41 @@ class MapFragment : Fragment(), OnMapReadyCallback {
             fragment.arguments = args
             return fragment
         }
+    }
+
+    private fun showOfflineIndicator() {
+        // For full-screen map, just show a snackbar
+        Snackbar.make(
+            requireView(),
+            "You're offline. Navigation features are limited.",
+            Snackbar.LENGTH_LONG
+        ).setAction("Retry") {
+            viewModel.checkConnectivity()
+            if (viewModel.isConnected.value == true) {
+                offlineMode = false
+                showMapContent()
+                // Attempt to reload the route
+                selectedBuilding?.let { building ->
+                    showRouteTo(building)
+                }
+            }
+        }.show()
+        
+        // For navigation features, fall back to direct line
+        selectedBuilding?.let { building ->
+            currentLocation?.let { currentLoc ->
+                drawFallbackRoute(currentLoc, LatLng(building.latitude, building.longitude), building)
+            }
+        }
+    }
+    
+    private fun showMapContent() {
+        noConnectionView.visibility = View.GONE
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // Check connectivity status when fragment returns to foreground
+        viewModel.checkConnectivity()
     }
 }

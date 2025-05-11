@@ -23,6 +23,7 @@ import com.example.explorandes.models.RecommendationType
 import com.example.explorandes.ui.buildings.BuildingsListFragment
 import com.example.explorandes.utils.SessionManager
 import com.example.explorandes.viewmodels.HomeViewModel
+import com.google.android.material.snackbar.Snackbar
 
 class HomeActivity : BaseActivity() {
 
@@ -36,6 +37,9 @@ class HomeActivity : BaseActivity() {
     private lateinit var buildingAdapter: BuildingAdapter
     private lateinit var eventAdapter: EventAdapter
     private lateinit var app: ExplorAndesApplication
+    
+    // Connectivity tracking fields
+    private var wasOfflineBefore = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,13 +60,18 @@ class HomeActivity : BaseActivity() {
         fragmentContainer = findViewById(R.id.fragment_container)
         noConnectionView = findViewById(R.id.no_connection_view)
 
-        if (!hasInternetConnection()) {
+        // Use ViewModelProvider with Context Factory
+        viewModel = ViewModelProvider(
+            this,
+            HomeViewModel.Factory(this)
+        )[HomeViewModel::class.java]
+        
+        // Check initial connectivity
+        wasOfflineBefore = !hasInternetConnection()
+        if (wasOfflineBefore) {
             showNoConnection()
         }
 
-        // Use ViewModelProvider para inicializar el ViewModel sin parámetros adicionales
-        viewModel = ViewModelProvider(this)[HomeViewModel::class.java]
-        
         setupViewModelObservers()
         viewModel.loadUserData(sessionManager)
         initializeUI()
@@ -73,7 +82,43 @@ class HomeActivity : BaseActivity() {
                 hideNoConnection()
                 refreshData()
             } else {
-                Toast.makeText(this, "Aún sin conexión a Internet", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Still no internet connection", Toast.LENGTH_SHORT).show()
+            }
+        }
+        
+        // Observe the connectivity status from ViewModel
+        viewModel.isConnected.observe(this) { isConnected ->
+            if (isConnected) {
+                if (wasOfflineBefore) {
+                    // If we're coming back online, show a message
+                    Snackbar.make(
+                        findViewById(android.R.id.content),
+                        "Internet connection restored",
+                        Snackbar.LENGTH_SHORT
+                    ).show()
+                    
+                    // Refresh data
+                    refreshData()
+                    hideNoConnection()
+                }
+                wasOfflineBefore = false
+            } else {
+                wasOfflineBefore = true
+                
+                // If we have content already loaded, show a snackbar
+                // Otherwise, show the full offline view
+                if (viewModel.buildings.value.isNullOrEmpty() && viewModel.events.value.isNullOrEmpty()) {
+                    showNoConnection()
+                } else {
+                    // Still show a warning but don't hide the content
+                    Snackbar.make(
+                        findViewById(android.R.id.content),
+                        "You're offline. Showing cached data.",
+                        Snackbar.LENGTH_LONG
+                    ).setAction("Retry") {
+                        viewModel.checkConnectivity()
+                    }.show()
+                }
             }
         }
     }
@@ -113,10 +158,27 @@ class HomeActivity : BaseActivity() {
 
         viewModel.error.observe(this) { errorMsg ->
             errorMsg?.let {
-                Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
-                if (it.contains("401") || it.contains("no encontr")) {
+                // Check if it's a connectivity error
+                if (it.contains("internet") || it.contains("connection") || it.contains("network")) {
+                    // Handle as connectivity issue
+                    if (viewModel.buildings.value.isNullOrEmpty() && viewModel.events.value.isNullOrEmpty()) {
+                        showNoConnection()
+                    } else {
+                        Snackbar.make(
+                            findViewById(android.R.id.content),
+                            it,
+                            Snackbar.LENGTH_LONG
+                        ).setAction("Retry") {
+                            viewModel.checkConnectivity()
+                        }.show()
+                    }
+                } else if (it.contains("401") || it.contains("no encontr")) {
+                    // Handle authentication errors
                     sessionManager.logout()
                     navigateToLogin()
+                } else {
+                    // Other errors
+                    Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -130,9 +192,9 @@ class HomeActivity : BaseActivity() {
         }
         
         viewModel.isLoading.observe(this) { isLoading ->
-            // Si está cargando y no hay datos aún, mostrar algún indicador de carga
+            // If loading and we have no data yet, show loading indicator
             if (isLoading && viewModel.buildings.value?.isEmpty() == true) {
-                // Mostrar indicador de carga si es necesario
+                // You could add a loading indicator here if needed
             }
         }
     }
@@ -219,7 +281,17 @@ class HomeActivity : BaseActivity() {
                 R.id.navigation_home -> { showHomeContent(); true }
                 R.id.navigation_favorites -> { Toast.makeText(this, getString(R.string.favorites), Toast.LENGTH_SHORT).show(); true }
                 R.id.navigation_navigate -> { startActivity(Intent(this, MapActivity::class.java)); true }
-                R.id.navigation_view -> { Toast.makeText(this, getString(R.string.view), Toast.LENGTH_SHORT).show(); true }
+                R.id.navigation_view -> { 
+                    // Show events list when clicking "View"
+                    nestedScrollView.visibility = View.GONE
+                    fragmentContainer.visibility = View.VISIBLE
+                    
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, EventListFragment.newInstance())
+                        .addToBackStack(null)
+                        .commit()
+                    true
+                }
                 R.id.navigation_account -> { loadFragment(com.example.explorandes.ui.account.AccountFragment()); true }
                 else -> false
             }
@@ -230,12 +302,14 @@ class HomeActivity : BaseActivity() {
         findViewById<TextView>(R.id.see_all_buildings).setOnClickListener {
             nestedScrollView.visibility = View.GONE
             fragmentContainer.visibility = View.VISIBLE
-
+    
             supportFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, BuildingsListFragment.newInstance())
                 .addToBackStack(null)
                 .commit()
         }
+        
+
     }
 
     private fun showHomeContent() {
@@ -260,13 +334,37 @@ class HomeActivity : BaseActivity() {
         finish()
     }
     
-    // Verificar conexión cuando la actividad vuelve a estar visible
+    // Override onResume to check connectivity
     override fun onResume() {
         super.onResume()
-        // Si no teníamos conexión pero ahora sí, ocultar mensaje
-        if (noConnectionView.visibility == View.VISIBLE && hasInternetConnection()) {
+        // Check connectivity when activity returns to foreground
+        viewModel.checkConnectivity()
+        
+        // If we were offline but now have connection, refresh data and update UI
+        if (wasOfflineBefore && hasInternetConnection()) {
             hideNoConnection()
             refreshData()
+            wasOfflineBefore = false
+            
+            Snackbar.make(
+                findViewById(android.R.id.content),
+                "Internet connection restored",
+                Snackbar.LENGTH_SHORT
+            ).show()
+        }
+    }
+    
+    // Handle back button press for fragments
+    override fun onBackPressed() {
+        if (fragmentContainer.visibility == View.VISIBLE) {
+            if (supportFragmentManager.backStackEntryCount > 0) {
+                supportFragmentManager.popBackStack()
+            } else {
+                // Show home content if there are no more fragments in back stack
+                showHomeContent()
+            }
+        } else {
+            super.onBackPressed()
         }
     }
 }

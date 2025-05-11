@@ -1,9 +1,11 @@
 package com.example.explorandes.viewmodels
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.explorandes.api.ApiClient
 import com.example.explorandes.models.Building
@@ -14,6 +16,7 @@ import com.example.explorandes.repositories.BuildingRepository
 import com.example.explorandes.repositories.UserRepository
 import com.example.explorandes.utils.SessionManager
 import kotlinx.coroutines.launch
+import com.example.explorandes.utils.ConnectivityHelper
 
 class HomeViewModel(private val context: Context) : ViewModel() {
     private val buildingRepository = BuildingRepository(context)
@@ -37,6 +40,22 @@ class HomeViewModel(private val context: Context) : ViewModel() {
 
     private val _userLocation = MutableLiveData<UserLocation>()
     val userLocation: LiveData<UserLocation> = _userLocation
+    
+    // Add connectivity status LiveData
+    private val _isConnected = MutableLiveData<Boolean>()
+    val isConnected: LiveData<Boolean> = _isConnected
+
+    // Check initial connectivity
+    init {
+        checkConnectivity()
+    }
+    
+    fun checkConnectivity(): Boolean {
+        val connectivityHelper = ConnectivityHelper(context)
+        val isAvailable = connectivityHelper.isInternetAvailable()
+        _isConnected.value = isAvailable
+        return isAvailable
+    }
 
     fun loadUserData(sessionManager: SessionManager) {
         viewModelScope.launch {
@@ -95,23 +114,33 @@ class HomeViewModel(private val context: Context) : ViewModel() {
                 _error.value = null
                 Log.d("HomeViewModel", "Loading events...")
 
-                val response = ApiClient.apiService.getAllEvents()
-                if (response.isSuccessful) {
-                    _events.value = response.body()
-                    Log.d("HomeViewModel", "Loaded ${response.body()?.size ?: 0} events")
+                // Check connectivity before making API call
+                if (buildingRepository.isInternetAvailable()) {
+                    val response = ApiClient.apiService.getAllEvents()
+                    if (response.isSuccessful) {
+                        _events.value = response.body()
+                        Log.d("HomeViewModel", "Loaded ${response.body()?.size ?: 0} events")
+                    } else {
+                        _error.value = "Failed to load events: ${response.code()} ${response.message()}"
+                        Log.e("HomeViewModel", "Error loading events: ${response.code()} ${response.message()}")
+                    }
                 } else {
-                    _error.value = "Failed to load events: ${response.code()} ${response.message()}"
-                    Log.e("HomeViewModel", "Error loading events: ${response.code()} ${response.message()}")
+                    // Try to load cached events if available
+                    _error.value = "No internet connection. Showing cached events."
+                    Log.d("HomeViewModel", "Loading events from cache due to no connectivity")
+                    // Return empty list if no cache available
+                    _events.value = emptyList()
                 }
             } catch (e: Exception) {
                 _error.value = "Failed to load events: ${e.localizedMessage}"
                 Log.e("HomeViewModel", "Error loading events", e)
+                // Fallback to empty list on error
+                _events.value = emptyList()
             } finally {
                 _isLoading.value = false
             }
         }
     }
-
 
     fun loadBuildingsByCategory(category: String) {
         viewModelScope.launch {
@@ -180,6 +209,17 @@ class HomeViewModel(private val context: Context) : ViewModel() {
             } finally {
                 _isLoading.value = false
             }
+        }
+    }
+    
+    // Factory class to create HomeViewModel instances with context
+    class Factory(private val context: Context) : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
+                return HomeViewModel(context) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
         }
     }
 }

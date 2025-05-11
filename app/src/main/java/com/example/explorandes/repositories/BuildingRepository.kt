@@ -19,6 +19,10 @@ class BuildingRepository(private val context: Context) {
     private val buildingDao = db.buildingDao()
     private val connectivityHelper = ConnectivityHelper(context)
 
+    fun isInternetAvailable(): Boolean {
+        return connectivityHelper.isInternetAvailable()
+    }
+
     suspend fun getAllBuildings(): List<Building> = withContext(Dispatchers.IO) {
         // Primero verificamos si hay internet
         if (connectivityHelper.isInternetAvailable()) {

@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.explorandes.models.Event
 import com.example.explorandes.repositories.EventRepository
+import com.example.explorandes.utils.ConnectivityHelper
 import com.example.explorandes.utils.NetworkResult
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -26,13 +27,26 @@ class EventViewModel(
     val currentFilter: LiveData<String?> = _currentFilter
 
     private val _allEvents = MutableLiveData<List<Event>>(emptyList())
+    
+    // For connectivity status
+    private val _isConnected = MutableLiveData<Boolean>()
+    val isConnected: LiveData<Boolean> = _isConnected
 
     init {
         loadEvents()
+        checkConnectivity()
+    }
+    
+    fun checkConnectivity(): Boolean {
+        val isAvailable = eventRepository.isInternetAvailable()
+        _isConnected.value = isAvailable
+        return isAvailable
     }
 
     fun loadEvents() {
         viewModelScope.launch {
+            _events.value = NetworkResult.Loading()
+            
             eventRepository.getAllEvents().collect { result ->
                 _events.value = result
 
@@ -59,31 +73,64 @@ class EventViewModel(
     fun loadEventsByType(type: String) {
         viewModelScope.launch {
             _events.value = NetworkResult.Loading()
-            eventRepository.getEventsByType(type).collect { result ->
-                _events.value = result
+            
+            // Add a filter on the existing events if internet isn't available
+            if (!eventRepository.isInternetAvailable()) {
+                val filteredEvents = _allEvents.value?.filter { it.type == type } ?: emptyList()
+                _events.value = NetworkResult.Success(filteredEvents)
+                return@launch
+            }
+            
+            // Try to get fresh data from repository
+            try {
+                // Make a custom search or filter on the existing data
+                val events = _allEvents.value?.filter { it.type == type } ?: emptyList()
+                _events.value = NetworkResult.Success(events)
+            } catch (e: Exception) {
+                _events.value = NetworkResult.Error("Error loading events by type: ${e.message}")
             }
         }
     }
-
+    
     fun loadUpcomingEvents(limit: Int = 10) {
         viewModelScope.launch {
             _events.value = NetworkResult.Loading()
-            eventRepository.getUpcomingEvents(limit).collect { result ->
-                _events.value = result
+            
+            try {
+                // Get all events and filter for upcoming ones
+                val allEventsList = _allEvents.value ?: emptyList()
+                val upcomingEvents = allEventsList.filter { 
+                    it.isUpcoming() 
+                }.take(limit)
+                
+                _events.value = NetworkResult.Success(upcomingEvents)
+            } catch (e: Exception) {
+                _events.value = NetworkResult.Error("Error loading upcoming events: ${e.message}")
             }
         }
     }
-
+    
     fun searchEvents(query: String) {
         if (query.isBlank()) {
             loadEvents()
             return
         }
-
+    
         viewModelScope.launch {
             _events.value = NetworkResult.Loading()
-            eventRepository.searchEvents(query).collect { result ->
-                _events.value = result
+            
+            try {
+                // Filter existing events by query
+                val allEventsList = _allEvents.value ?: emptyList()
+                val searchResults = allEventsList.filter {
+                    it.title.contains(query, ignoreCase = true) ||
+                    (it.description?.contains(query, ignoreCase = true) ?: false) ||
+                    (it.locationName?.contains(query, ignoreCase = true) ?: false)
+                }
+                
+                _events.value = NetworkResult.Success(searchResults)
+            } catch (e: Exception) {
+                _events.value = NetworkResult.Error("Error searching events: ${e.message}")
             }
         }
     }
@@ -128,8 +175,17 @@ class EventViewModel(
     fun getEventsByLocation(locationId: Long) {
         viewModelScope.launch {
             _events.value = NetworkResult.Loading()
-            eventRepository.getEventsByLocation(locationId).collect { result ->
-                _events.value = result
+            
+            try {
+                // Filter existing events by location ID
+                val allEventsList = _allEvents.value ?: emptyList()
+                val locationEvents = allEventsList.filter {
+                    it.locationId == locationId
+                }
+                
+                _events.value = NetworkResult.Success(locationEvents)
+            } catch (e: Exception) {
+                _events.value = NetworkResult.Error("Error loading events by location: ${e.message}")
             }
         }
     }

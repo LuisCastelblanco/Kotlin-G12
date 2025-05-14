@@ -33,6 +33,9 @@ import retrofit2.HttpException
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import com.google.android.material.snackbar.Snackbar
+import com.example.explorandes.utils.ConnectivityHelper
+import com.example.explorandes.utils.SessionManager
 
 class EditProfileFragment : Fragment() {
     
@@ -121,6 +124,21 @@ class EditProfileFragment : Fragment() {
             
             // Email is not editable
             emailInput.isEnabled = false
+            
+            // If we're offline, make all fields read-only
+            if (!ConnectivityHelper(requireContext()).isInternetAvailable()) {
+                firstNameInput.isEnabled = false
+                lastNameInput.isEnabled = false
+                changeProfilePicture.isEnabled = false
+                saveButton.isEnabled = false
+                
+                // Show message
+                Snackbar.make(
+                    requireView(),
+                    "Sin conexión. Los datos no pueden ser editados.",
+                    Snackbar.LENGTH_LONG
+                ).show()
+            }
         }
         
         // Set click listeners

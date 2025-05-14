@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -31,6 +32,11 @@ import com.example.explorandes.api.ApiClient
 import com.example.explorandes.models.AuthRequest
 import com.example.explorandes.models.RegisterRequest
 import com.example.explorandes.utils.SessionManager
+import com.bumptech.glide.Glide
+import com.example.explorandes.utils.ConnectivityHelper
+import com.example.explorandes.utils.FileStorage
+import com.google.gson.JsonSyntaxException
+import java.io.IOException
 
 
 class MainActivity : BaseActivity() {
@@ -170,7 +176,9 @@ fun LoginScreen(navController: NavHostController) {
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
         ) {
             Text(
                 text = "Sign In",
@@ -231,53 +239,70 @@ fun LoginScreen(navController: NavHostController) {
                             errorMessage = null
                             isLoading = true
 
-                            // Perform login
+                            // Perform login with error handling
                             scope.launch {
                                 try {
                                     val response = ApiClient.apiService.login(AuthRequest(email = email, password = password))
 
                                     if (response.isSuccessful && response.body() != null) {
-                                        // Obtener la respuesta
+                                        // Obtain response
                                         val authResponse = response.body()!!
-                                        Log.d("LoginScreen", "Login exitoso: ${authResponse.token}")
+                                        Log.d("LoginScreen", "Login successful: ${authResponse.token}")
 
-                                        // Guardar token
+                                        // Save token
                                         sessionManager.saveToken(authResponse.token)
 
-                                        // Extraer datos del usuario de la respuesta
-                                        val userId = authResponse.id
-                                        val userEmail = authResponse.email
-                                        val userName = authResponse.username ?: authResponse.firstName ?: email.split('@')[0]
+                                        // Extract and save user data
+                                        val userId = authResponse.id ?: -1L
+                                        val userEmail = authResponse.email ?: ""
+                                        val userName = authResponse.username 
+                                            ?: authResponse.firstName 
+                                            ?: email.split('@')[0]
+                                        val profilePicUrl = authResponse.user?.profileImageUrl
 
-                                        if (userId != null && userEmail != null) {
-                                            Log.d("LoginScreen", "Datos de usuario: id=$userId, email=$userEmail, name=$userName")
-                                            sessionManager.saveUserInfo(userId, userEmail, userName ?: "Usuario")
-
-                                            // Verificar que se guardó correctamente
-                                            if (sessionManager.getUserId() > 0) {
+                                        // Save comprehensive user info
+                                        if (userId > 0) {
+                                            try {
+                                                sessionManager.saveUserInfo(userId, userEmail, userName)
+                                                
+                                                // Save profile pic URL if available
+                                                if (profilePicUrl != null && profilePicUrl.isNotEmpty()) {
+                                                    sessionManager.saveProfilePictureUrl(profilePicUrl)
+                                                }
+                                                
                                                 // Navigate to home
                                                 val intent = Intent(context, HomeActivity::class.java)
                                                 context.startActivity(intent)
-                                                // Finish current activity if needed
-                                                if (context is ComponentActivity) {
-                                                    context.finish()
-                                                }
-                                            } else {
-                                                errorMessage = "Error al guardar datos de usuario"
+                                                (context as? ComponentActivity)?.finish()
+                                            } catch (e: Exception) {
+                                                Log.e("LoginScreen", "Error saving user info", e)
+                                                errorMessage = "Error saving user data: ${e.localizedMessage}"
                                             }
                                         } else {
-                                            errorMessage = "No se recibieron datos de usuario en la respuesta"
-                                            Log.e("LoginScreen", "No hay datos de usuario en la respuesta")
-                                            // Eliminamos el token ya que no tenemos datos completos
-                                            sessionManager.logout()
+                                            errorMessage = "Invalid user ID received from server"
                                         }
                                     } else {
-                                        errorMessage = "Login failed: ${response.code()} - ${response.errorBody()?.string()}"
-                                        Log.e("LoginScreen", "Error en login: ${response.code()}")
+                                        // Handle HTTP errors with proper response handling
+                                        val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                                        Log.e("LoginScreen", "Login error: ${response.code()} - $errorBody")
+                                        
+                                        errorMessage = when (response.code()) {
+                                            401 -> "Invalid email or password"
+                                            403 -> "Access denied"
+                                            404 -> "Service not found"
+                                            500 -> "Server error. Please try again later."
+                                            else -> "Login failed: ${response.code()}"
+                                        }
                                     }
                                 } catch (e: Exception) {
-                                    errorMessage = "Login failed: ${e.localizedMessage}"
-                                    Log.e("LoginScreen", "Excepción en login: ${e.message}", e)
+                                    // Handle network or other exceptions
+                                    Log.e("LoginScreen", "Login exception", e)
+                                    
+                                    errorMessage = when (e) {
+                                        is IOException -> "Network error. Please check your connection."
+                                        is JsonSyntaxException -> "Error parsing server response."
+                                        else -> "Login failed: ${e.localizedMessage ?: "Unknown error"}"
+                                    }
                                 } finally {
                                     isLoading = false
                                 }
@@ -305,10 +330,21 @@ fun LoginScreen(navController: NavHostController) {
             ) {
                 Text("Don't have an account? Sign Up", color = Color(0xFFE91E63))
             }
+            
+            // Offline mode notice
+            if (!ConnectivityHelper(context).isInternetAvailable()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "You're offline. Login requires internet connection.",
+                    color = Color.Yellow,
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
         }
     }
 }
-
 @Composable
 fun RegisterScreen(navController: NavHostController) {
     // Get the context to launch intent

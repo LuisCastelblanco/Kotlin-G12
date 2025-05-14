@@ -18,6 +18,10 @@ import com.example.explorandes.models.User
 import com.example.explorandes.utils.SessionManager
 import kotlinx.coroutines.launch
 import com.bumptech.glide.Glide
+import com.google.android.material.snackbar.Snackbar
+import com.example.explorandes.utils.ConnectivityHelper
+import android.util.Log
+
 
 class AccountFragment : Fragment() {
     
@@ -56,7 +60,7 @@ class AccountFragment : Fragment() {
         // Cargar datos del usuario
         loadUserData()
         
-        // Configurar listeners
+        // Configurar listenersF
         setupClickListeners()
         
         return view
@@ -65,39 +69,69 @@ class AccountFragment : Fragment() {
     private fun loadUserData() {
         showLoading(true)
         
-        // Obtener ID del usuario desde SessionManager
+        // First, try to load from cache (SessionManager)
         val userId = sessionManager.getUserId()
         
         if (userId <= 0) {
-            // No hay usuario logueado, redirigir a login
+            // No cached user data, redirect to login
             Toast.makeText(requireContext(), "No se encontró información de usuario", Toast.LENGTH_SHORT).show()
             navigateToLogin()
             return
         }
         
-        // Obtener datos del usuario desde el backend
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val response = ApiClient.apiService.getUserById(userId)
-                
-                if (response.isSuccessful && response.body() != null) {
-                    currentUser = response.body()
-                    updateUI()
-                } else {
-                    // Error al obtener los datos del usuario
-                    Toast.makeText(requireContext(), "Error al cargar el perfil: ${response.code()}", Toast.LENGTH_SHORT).show()
-                    if (response.code() == 401) {
-                        // Token inválido o expirado
-                        sessionManager.logout()
-                        navigateToLogin()
+        // Show cached data immediately
+        val cachedUserName = sessionManager.getCachedUserName()
+        val cachedEmail = sessionManager.getEmail() ?: ""
+        
+        // Update UI with cached data
+        userName.text = cachedUserName
+        userRole.text = "Estudiante" // Default value
+        
+        // Load cached profile picture if available
+        val cachedProfilePicUrl = sessionManager.getCachedProfilePicUrl()
+        if (!cachedProfilePicUrl.isNullOrEmpty()) {
+            Glide.with(requireContext())
+                .load(cachedProfilePicUrl)
+                .placeholder(R.drawable.profile_placeholder)
+                .error(R.drawable.profile_placeholder)
+                .circleCrop()
+                .into(profileImage)
+        } else {
+            profileImage.setImageResource(R.drawable.profile_placeholder)
+        }
+        
+        // Hide loading once cached data is shown
+        showLoading(false)
+        
+        // Then try to get fresh data from API if online
+        if (ConnectivityHelper(requireContext()).isInternetAvailable()) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    val response = ApiClient.apiService.getUserById(userId)
+                    
+                    if (response.isSuccessful && response.body() != null) {
+                        currentUser = response.body()
+                        updateUI()
+                    } else {
+                        // API error but we already have cached data shown
+                        if (response.code() == 401) {
+                            // Token invalid or expired
+                            sessionManager.logout()
+                            navigateToLogin()
+                        }
                     }
+                } catch (e: Exception) {
+                    // Network error, but we already have cached data shown
+                    Log.e("AccountFragment", "Error de conexión: ${e.message}")
                 }
-            } catch (e: Exception) {
-                // Error de conexión
-                Toast.makeText(requireContext(), "Error de conexión: ${e.message}", Toast.LENGTH_SHORT).show()
-            } finally {
-                showLoading(false)
             }
+        } else {
+            // Offline - we've already shown cached data
+            Snackbar.make(
+                requireView(),
+                "Sin conexión. Mostrando datos almacenados localmente.",
+                Snackbar.LENGTH_LONG
+            ).show()
         }
     }
     

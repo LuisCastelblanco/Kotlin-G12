@@ -6,11 +6,17 @@ import android.util.Log
 import com.example.explorandes.database.AppDatabase
 import com.example.explorandes.services.LightSensorManager
 import com.example.explorandes.utils.ConnectivityHelper
+import com.example.explorandes.utils.DataStoreManager
+import com.example.explorandes.utils.FileStorage
+import com.example.explorandes.utils.SessionManager
+
 
 class ExplorAndesApplication : Application() {
     lateinit var lightSensorManager: LightSensorManager
     lateinit var connectivityHelper: ConnectivityHelper
     lateinit var database: AppDatabase
+    lateinit var fileStorage: FileStorage
+    lateinit var dataStoreManager: DataStoreManager
     
     override fun onCreate() {
         super.onCreate()
@@ -19,11 +25,11 @@ class ExplorAndesApplication : Application() {
             Log.d("ExplorAndesApp", "Light sensor reading: $lux lux")
         }
         
-        // Inicializar ConnectivityHelper
+        // Initialize utilities
         connectivityHelper = ConnectivityHelper(this)
-        
-        // Inicializar la base de datos
         database = AppDatabase.getInstance(this)
+        fileStorage = FileStorage(this)
+        dataStoreManager = DataStoreManager(this)
         
         val prefs = getSharedPreferences("app_settings", Context.MODE_PRIVATE)
         val autoBrightnessEnabled = prefs.getBoolean("auto_brightness_enabled", true)

@@ -24,6 +24,7 @@ import com.example.explorandes.ui.buildings.BuildingsListFragment
 import com.example.explorandes.utils.SessionManager
 import com.example.explorandes.viewmodels.HomeViewModel
 import com.google.android.material.snackbar.Snackbar
+import com.bumptech.glide.Glide
 
 class HomeActivity : BaseActivity() {
 
@@ -153,7 +154,30 @@ class HomeActivity : BaseActivity() {
 
     private fun setupViewModelObservers() {
         viewModel.user.observe(this) { user ->
+            // Save all user info to SessionManager
             sessionManager.saveUserInfo(user.id, user.email, user.username)
+            
+            // Update UI with fresh user data
+            val greetingText: TextView = findViewById(R.id.greeting_text)
+            greetingText.text = "Hola, ${user.username}"
+            
+            // Save profile image URL if available
+            user.profileImageUrl?.let { imageUrl ->
+                sessionManager.saveProfilePictureUrl(imageUrl)
+                
+                // Update profile image
+                val profileImage: ImageView? = findViewById(R.id.profile_image)
+                profileImage?.let { imageView ->
+                    com.bumptech.glide.Glide.with(this@HomeActivity)
+                        .load(imageUrl)
+                        .placeholder(R.drawable.profile_placeholder)
+                        .error(R.drawable.profile_placeholder)
+                        .circleCrop()
+                        .into(imageView)
+                }
+            }
+            
+            android.util.Log.d("HomeActivity", "User data updated: ${user.username}")
         }
 
         viewModel.error.observe(this) { errorMsg ->
@@ -197,23 +221,78 @@ class HomeActivity : BaseActivity() {
                 // You could add a loading indicator here if needed
             }
         }
+        
+        // Observe connectivity status
+        viewModel.isConnected.observe(this) { isConnected ->
+            if (isConnected) {
+                if (wasOfflineBefore) {
+                    // If we're coming back online, show a message
+                    Snackbar.make(
+                        findViewById(android.R.id.content),
+                        "Internet connection restored",
+                        Snackbar.LENGTH_SHORT
+                    ).show()
+                    
+                    // Refresh data
+                    refreshData()
+                    hideNoConnection()
+                }
+                wasOfflineBefore = false
+            } else {
+                wasOfflineBefore = true
+                
+                // If we have content already loaded, show a snackbar
+                // Otherwise, show the full offline view
+                if (viewModel.buildings.value.isNullOrEmpty() && viewModel.events.value.isNullOrEmpty()) {
+                    showNoConnection()
+                } else {
+                    // Still show a warning but don't hide the content
+                    Snackbar.make(
+                        findViewById(android.R.id.content),
+                        "You're offline. Showing cached data.",
+                        Snackbar.LENGTH_LONG
+                    ).setAction("Retry") {
+                        viewModel.checkConnectivity()
+                    }.show()
+                }
+            }
+        }
     }
 
     private fun initializeUI() {
-        val userName = sessionManager.getUsername() ?: "Usuario"
+        val userName = sessionManager.getCachedUserName()
         findViewById<TextView>(R.id.greeting_text).text = "Hola, $userName"
-
+        
+        val profileImageView = findViewById<ImageView>(R.id.profile_image)
+        val profileImageUrl = sessionManager.getCachedProfilePicUrl()
+        
+        if (profileImageUrl != null && profileImageUrl.isNotEmpty()) {
+            com.bumptech.glide.Glide.with(this)
+                .load(profileImageUrl)
+                .placeholder(R.drawable.profile_placeholder)
+                .error(R.drawable.profile_placeholder)
+                .circleCrop()
+                .into(profileImageView)
+        }
+        
         setupCategoryIcons()
         setupRecyclerViews()
         setupBottomNavigation()
         setupClickListeners()
 
+        loadUserDataIfConnected()
         viewModel.loadBuildings()
         viewModel.loadEvents()
-
+        
         if (intent.getBooleanExtra("OPEN_NAVIGATION", false)) {
             findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
                 .selectedItemId = R.id.navigation_navigate
+        }
+    }
+
+    private fun loadUserDataIfConnected() {
+        if (hasInternetConnection()) {
+            viewModel.loadUserData(sessionManager)
         }
     }
 

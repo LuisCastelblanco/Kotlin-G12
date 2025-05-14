@@ -13,6 +13,7 @@ class SessionManager(context: Context) {
         const val USER_ID = "user_id"
         const val USER_EMAIL = "user_email"
         const val USER_NAME = "user_name"
+        const val PROFILE_PIC_URL = "profile_pic_url"
     }
 
     // Guardar token JWT
@@ -28,12 +29,26 @@ class SessionManager(context: Context) {
         return prefs.getString(USER_TOKEN, null)
     }
 
-    fun getUsername(): String? {
-        return prefs.getString(USER_NAME, null)
+    // Get cached username
+    fun getCachedUserName(): String {
+        return prefs.getString(USER_NAME, "Usuario") ?: "Usuario"
     }
 
+    // Get email
     fun getEmail(): String? {
         return prefs.getString(USER_EMAIL, null)
+    }
+
+    // Save profile picture URL
+    fun saveProfilePictureUrl(url: String?) {
+        val editor = prefs.edit()
+        editor.putString(PROFILE_PIC_URL, url)
+        editor.apply()
+    }
+
+    // Get cached profile picture URL
+    fun getCachedProfilePicUrl(): String? {
+        return prefs.getString(PROFILE_PIC_URL, null)
     }
 
     // Guardar datos básicos del usuario

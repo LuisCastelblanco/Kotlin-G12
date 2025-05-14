@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -35,7 +36,8 @@ import com.bumptech.glide.Glide
 import com.example.explorandes.utils.ConnectivityHelper
 import com.example.explorandes.utils.FileStorage
 import com.example.explorandes.utils.DataStoreManager
-
+import com.google.gson.JsonSyntaxException
+import java.io.IOException
 
 
 class MainActivity : BaseActivity() {

@@ -22,7 +22,6 @@ import com.google.android.material.snackbar.Snackbar
 import com.example.explorandes.utils.ConnectivityHelper
 import android.util.Log
 
-
 class AccountFragment : Fragment() {
     
     private lateinit var profileImage: ImageView
@@ -36,6 +35,7 @@ class AccountFragment : Fragment() {
     
     private lateinit var sessionManager: SessionManager
     private var currentUser: User? = null
+    private var rootView: View? = null
     
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -43,8 +43,9 @@ class AccountFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_account, container, false)
+        rootView = view
         
-        // Inicializar SessionManager
+        // Initialize SessionManager
         sessionManager = SessionManager(requireContext())
         
         // Initialize views
@@ -57,11 +58,11 @@ class AccountFragment : Fragment() {
         signOutOption = view.findViewById(R.id.signOutOption)
         loadingView = view.findViewById(R.id.loadingView)
         
-        // Cargar datos del usuario
-        loadUserData()
-        
-        // Configurar listenersF
+        // Set up click listeners
         setupClickListeners()
+        
+        // Load user data after views are initialized
+        loadUserData()
         
         return view
     }
@@ -127,15 +128,19 @@ class AccountFragment : Fragment() {
             }
         } else {
             // Offline - we've already shown cached data
-            Snackbar.make(
-                requireView(),
-                "Sin conexión. Mostrando datos almacenados localmente.",
-                Snackbar.LENGTH_LONG
-            ).show()
+            if (isAdded && view != null) {  // Check if fragment is still attached
+                Snackbar.make(
+                    requireView(),
+                    "Sin conexión. Mostrando datos almacenados localmente.",
+                    Snackbar.LENGTH_LONG
+                ).show()
+            }
         }
     }
     
     private fun updateUI() {
+        if (!isAdded || view == null) return  // Check if fragment is still attached
+        
         currentUser?.let { user ->
             // Construir nombre completo
             val displayName = if (!user.firstName.isNullOrEmpty() || !user.lastName.isNullOrEmpty()) {
@@ -225,6 +230,8 @@ class AccountFragment : Fragment() {
     }
     
     private fun showLoading(isLoading: Boolean) {
-        loadingView.visibility = if (isLoading) View.VISIBLE else View.GONE
+        if (::loadingView.isInitialized) {
+            loadingView.visibility = if (isLoading) View.VISIBLE else View.GONE
+        }
     }
 }

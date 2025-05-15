@@ -49,7 +49,7 @@ class LightSensorManager(
                 }
                 lastReading = lux
                 
-                Log.d("LightSensorManager", "Ambient light level: $lux lux (raw: $rawLux)")
+                //Log.d("LightSensorManager", "Ambient light level: $lux lux (raw: $rawLux)")
                 onLightChanged(lux)
             }
         }
@@ -57,7 +57,7 @@ class LightSensorManager(
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
         if (sensor?.type == Sensor.TYPE_LIGHT) {
-            Log.d("LightSensorManager", "Light sensor accuracy changed: $accuracy")
+           // Log.d("LightSensorManager", "Light sensor accuracy changed: $accuracy")
         }
     }
 }

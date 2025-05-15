@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -212,6 +213,7 @@ class HomeActivity : BaseActivity() {
         }
 
         viewModel.events.observe(this) { events ->
+            Log.d("HomeActivity", "Events LiveData updated: received ${events?.size ?: 0} events")
             eventAdapter.submitList(events)
         }
         

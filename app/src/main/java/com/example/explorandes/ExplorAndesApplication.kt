@@ -9,6 +9,7 @@ import com.example.explorandes.utils.ConnectivityHelper
 import com.example.explorandes.utils.DataStoreManager
 import com.example.explorandes.utils.FileStorage
 import com.example.explorandes.utils.SessionManager
+import java.io.File
 
 
 class ExplorAndesApplication : Application() {
@@ -33,6 +34,11 @@ class ExplorAndesApplication : Application() {
         
         val prefs = getSharedPreferences("app_settings", Context.MODE_PRIVATE)
         val autoBrightnessEnabled = prefs.getBoolean("auto_brightness_enabled", true)
+        val imageDir = File(filesDir, "image_cache")
+        if (!imageDir.exists()) {
+            imageDir.mkdirs()
+            Log.d("ExplorAndesApp", "Created image cache directory")
+        }
         
         Log.d("ExplorAndesApp", "Auto brightness enabled: $autoBrightnessEnabled")
     }

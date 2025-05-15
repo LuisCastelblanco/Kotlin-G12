@@ -13,6 +13,7 @@ import com.bumptech.glide.request.transition.Transition
 import com.example.explorandes.R
 import com.example.explorandes.models.Building
 import com.example.explorandes.utils.CustomImageCache
+import com.example.explorandes.utils.ImageDiskCache
 
 class BuildingAdapter(
     private var buildings: List<Building>,
@@ -40,25 +41,45 @@ class BuildingAdapter(
         val imageUrl = building.imageUrl
 
         if (!imageUrl.isNullOrEmpty()) {
+            // Obtener el contexto para inicializar ImageDiskCache
+            val context = holder.itemView.context
+            val imageDiskCache = ImageDiskCache.getInstance(context)
+            
+            // 1. Primero, intentar obtener de la caché en memoria
             val cachedBitmap = CustomImageCache.getBitmapFromCache(imageUrl)
 
             if (cachedBitmap != null) {
+                // Si está en la caché en memoria, usarlo directamente
                 holder.image.setImageBitmap(cachedBitmap)
             } else {
-                Glide.with(holder.image.context)
-                    .asBitmap()
-                    .load(imageUrl)
-                    .placeholder(R.drawable.profile_placeholder)
-                    .into(object : CustomTarget<android.graphics.Bitmap>() {
-                        override fun onResourceReady(resource: android.graphics.Bitmap, transition: Transition<in android.graphics.Bitmap>?) {
-                            holder.image.setImageBitmap(resource)
-                            CustomImageCache.putBitmapInCache(imageUrl, resource)
-                        }
+                // 2. Si no está en memoria, intentar obtener de la caché en disco
+                val diskCachedBitmap = imageDiskCache.loadBitmapFromDisk(imageUrl)
+                
+                if (diskCachedBitmap != null) {
+                    // Si está en la caché en disco, usarlo y guardarlo en memoria
+                    holder.image.setImageBitmap(diskCachedBitmap)
+                    CustomImageCache.putBitmapInCache(imageUrl, diskCachedBitmap)
+                } else {
+                    // 3. Si no está en ninguna caché, descargarlo con Glide
+                    Glide.with(holder.image.context)
+                        .asBitmap()
+                        .load(imageUrl)
+                        .placeholder(R.drawable.profile_placeholder)
+                        .into(object : CustomTarget<android.graphics.Bitmap>() {
+                            override fun onResourceReady(resource: android.graphics.Bitmap, transition: Transition<in android.graphics.Bitmap>?) {
+                                // Mostrar la imagen
+                                holder.image.setImageBitmap(resource)
+                                
+                                // Guardar en ambas cachés
+                                CustomImageCache.putBitmapInCache(imageUrl, resource)
+                                imageDiskCache.saveBitmapToDisk(imageUrl, resource)
+                            }
 
-                        override fun onLoadCleared(placeholder: Drawable?) {
-                            holder.image.setImageDrawable(placeholder)
-                        }
-                    })
+                            override fun onLoadCleared(placeholder: Drawable?) {
+                                holder.image.setImageDrawable(placeholder)
+                            }
+                        })
+                }
             }
         } else {
             holder.image.setImageResource(R.drawable.profile_placeholder)

@@ -1,5 +1,6 @@
 package com.example.explorandes.adapters
 
+import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -7,9 +8,12 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.example.explorandes.R
 import com.example.explorandes.databinding.ItemEventBinding
 import com.example.explorandes.models.Event
+import com.example.explorandes.utils.CustomImageCache
 
 class EventAdapter(
     private val onEventClick: (Event) -> Unit
@@ -48,7 +52,6 @@ class EventAdapter(
                 tvEventDate.text = event.getFormattedDate()
                 tvEventTime.text = event.getFormattedTimeRange()
 
-                // Set location text if available
                 event.locationName?.let {
                     tvEventLocation.text = it
                     tvEventLocation.visibility = View.VISIBLE
@@ -56,7 +59,6 @@ class EventAdapter(
                     tvEventLocation.visibility = View.GONE
                 }
 
-                // Set event type badge
                 when (event.type) {
                     Event.TYPE_EVENT -> {
                         tvEventType.text = "Event"
@@ -76,7 +78,6 @@ class EventAdapter(
                     }
                 }
 
-                // Highlight ongoing events
                 if (event.isHappeningNow()) {
                     cardEvent.strokeWidth = 2
                     cardEvent.strokeColor = root.context.getColor(R.color.colorAccent)
@@ -86,15 +87,31 @@ class EventAdapter(
                     tvNowPlaying.visibility = View.GONE
                 }
 
-                // Load event image
-                event.imageUrl?.let { url ->
-                    Glide.with(ivEventImage.context)
-                        .load(url)
-                        .placeholder(R.drawable.placeholder_event)
-                        .error(R.drawable.placeholder_event)
-                        .centerCrop()
-                        .into(ivEventImage)
-                } ?: run {
+                val imageUrl = event.imageUrl
+                if (!imageUrl.isNullOrEmpty()) {
+                    val cachedBitmap = CustomImageCache.getBitmapFromCache(imageUrl)
+
+                    if (cachedBitmap != null) {
+                        ivEventImage.setImageBitmap(cachedBitmap)
+                    } else {
+                        Glide.with(ivEventImage.context)
+                            .asBitmap()
+                            .load(imageUrl)
+                            .placeholder(R.drawable.placeholder_event)
+                            .error(R.drawable.placeholder_event)
+                            .centerCrop()
+                            .into(object : CustomTarget<android.graphics.Bitmap>() {
+                                override fun onResourceReady(resource: android.graphics.Bitmap, transition: Transition<in android.graphics.Bitmap>?) {
+                                    ivEventImage.setImageBitmap(resource)
+                                    CustomImageCache.putBitmapInCache(imageUrl, resource)
+                                }
+
+                                override fun onLoadCleared(placeholder: Drawable?) {
+                                    ivEventImage.setImageDrawable(placeholder)
+                                }
+                            })
+                    }
+                } else {
                     ivEventImage.setImageResource(R.drawable.placeholder_event)
                 }
             }

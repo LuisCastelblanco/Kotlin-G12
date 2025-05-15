@@ -1,15 +1,18 @@
 package com.example.explorandes.adapters
 
+import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.example.explorandes.R
 import com.example.explorandes.models.Building
+import com.example.explorandes.utils.CustomImageCache
 
 class BuildingAdapter(
     private var buildings: List<Building>,
@@ -34,21 +37,36 @@ class BuildingAdapter(
         holder.name.text = building.name
         holder.code.text = building.code
 
-        // Load image
-        if (!building.imageUrl.isNullOrEmpty()) {
-            Glide.with(holder.image.context)
-                .load(building.imageUrl)
-                .placeholder(R.drawable.profile_placeholder)
-                .into(holder.image)
+        val imageUrl = building.imageUrl
+
+        if (!imageUrl.isNullOrEmpty()) {
+            val cachedBitmap = CustomImageCache.getBitmapFromCache(imageUrl)
+
+            if (cachedBitmap != null) {
+                holder.image.setImageBitmap(cachedBitmap)
+            } else {
+                Glide.with(holder.image.context)
+                    .asBitmap()
+                    .load(imageUrl)
+                    .placeholder(R.drawable.profile_placeholder)
+                    .into(object : CustomTarget<android.graphics.Bitmap>() {
+                        override fun onResourceReady(resource: android.graphics.Bitmap, transition: Transition<in android.graphics.Bitmap>?) {
+                            holder.image.setImageBitmap(resource)
+                            CustomImageCache.putBitmapInCache(imageUrl, resource)
+                        }
+
+                        override fun onLoadCleared(placeholder: Drawable?) {
+                            holder.image.setImageDrawable(placeholder)
+                        }
+                    })
+            }
         } else {
             holder.image.setImageResource(R.drawable.profile_placeholder)
         }
 
-        // Set click listener on the entire item
         holder.itemView.setOnClickListener {
             onBuildingClicked(building)
         }
-        //Comment 1
     }
 
     override fun getItemCount() = buildings.size

@@ -12,13 +12,13 @@ object BrightnessController {
             if (originalBrightness < 0) {
                 originalBrightness = activity.window.attributes.screenBrightness
                 if (originalBrightness < 0) originalBrightness = 0.5f 
-                Log.d("BrightnessController", "Original brightness saved: $originalBrightness")
+               // Log.d("BrightnessController", "Original brightness saved: $originalBrightness")
             }
             
             val layoutParams = activity.window.attributes
             layoutParams.screenBrightness = brightness.coerceIn(0.1f, 1.0f)
             activity.window.attributes = layoutParams
-            Log.d("BrightnessController", "Brightness set to: ${layoutParams.screenBrightness}")
+           // Log.d("BrightnessController", "Brightness set to: ${layoutParams.screenBrightness}")
         } catch (e: Exception) {
             Log.e("BrightnessController", "Error setting brightness", e)
         }

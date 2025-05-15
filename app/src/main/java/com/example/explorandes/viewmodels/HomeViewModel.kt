@@ -17,6 +17,11 @@ import com.example.explorandes.repositories.UserRepository
 import com.example.explorandes.utils.SessionManager
 import kotlinx.coroutines.launch
 import com.example.explorandes.utils.ConnectivityHelper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.example.explorandes.database.AppDatabase
+import com.example.explorandes.database.entity.EventEntity
+
 
 class HomeViewModel(private val context: Context) : ViewModel() {
     private val buildingRepository = BuildingRepository(context)
@@ -112,32 +117,77 @@ class HomeViewModel(private val context: Context) : ViewModel() {
             try {
                 _isLoading.value = true
                 _error.value = null
-                Log.d("HomeViewModel", "Loading events...")
-
+                
+                Log.d("HomeViewModel", "Starting to load events, internet available: ${buildingRepository.isInternetAvailable()}")
+                
                 // Check connectivity before making API call
                 if (buildingRepository.isInternetAvailable()) {
+                    Log.d("HomeViewModel", "Attempting API call to fetch events")
                     val response = ApiClient.apiService.getAllEvents()
+                    
+                    Log.d("HomeViewModel", "API response received: code=${response.code()}, successful=${response.isSuccessful}")
+                    
                     if (response.isSuccessful) {
-                        _events.value = response.body()
-                        Log.d("HomeViewModel", "Loaded ${response.body()?.size ?: 0} events")
+                        val eventsFromNetwork = response.body()
+                        Log.d("HomeViewModel", "Events from network: ${eventsFromNetwork?.size ?: "null"}")
+                        
+                        if (eventsFromNetwork != null) {
+                            _events.value = eventsFromNetwork
+                            Log.d("HomeViewModel", "LiveData updated with ${eventsFromNetwork.size} events")
+                            
+                            // Save to local database
+                            saveEventsToLocalDatabase(eventsFromNetwork)
+                        } else {
+                            Log.e("HomeViewModel", "API returned successful response but body was null")
+                            _error.value = "Server returned empty response"
+                            loadEventsFromLocalDatabase()
+                        }
                     } else {
+                        Log.e("HomeViewModel", "API error: ${response.code()} - ${response.errorBody()?.string()}")
                         _error.value = "Failed to load events: ${response.code()} ${response.message()}"
-                        Log.e("HomeViewModel", "Error loading events: ${response.code()} ${response.message()}")
+                        loadEventsFromLocalDatabase()
                     }
                 } else {
-                    // Try to load cached events if available
+                    Log.d("HomeViewModel", "No internet connection, loading from local database")
                     _error.value = "No internet connection. Showing cached events."
-                    Log.d("HomeViewModel", "Loading events from cache due to no connectivity")
-                    // Return empty list if no cache available
-                    _events.value = emptyList()
+                    loadEventsFromLocalDatabase()
                 }
             } catch (e: Exception) {
+                Log.e("HomeViewModel", "Exception during event loading", e)
                 _error.value = "Failed to load events: ${e.localizedMessage}"
-                Log.e("HomeViewModel", "Error loading events", e)
-                // Fallback to empty list on error
-                _events.value = emptyList()
+                loadEventsFromLocalDatabase()
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    private fun saveEventsToLocalDatabase(events: List<Event>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val db = AppDatabase.getInstance(context)
+                val eventEntities = events.map { EventEntity.fromModel(it) }
+                db.eventDao().insertEvents(eventEntities)
+                Log.d("HomeViewModel", "Saved ${events.size} events to local database")
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Error saving events to local database", e)
+            }
+        }
+    }
+
+    private fun loadEventsFromLocalDatabase() {
+        viewModelScope.launch {
+            try {
+                val db = AppDatabase.getInstance(context)
+                db.eventDao().getAllEvents().collect { eventEntities ->
+                    val events = eventEntities.map { entity -> entity.toModel() }
+
+                    _events.value = events
+                    Log.d("HomeViewModel", "Loaded ${events.size} events from local database")
+                }
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Error loading events from local database", e)
+                _events.value = emptyList()
             }
         }
     }

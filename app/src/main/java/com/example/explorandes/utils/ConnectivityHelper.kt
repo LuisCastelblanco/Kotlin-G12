@@ -12,6 +12,7 @@ class ConnectivityHelper(private val context: Context) {
     
     private val TAG = "ConnectivityHelper"
     
+    
     /**
      * Verifica si hay una conexión a Internet disponible
      */

@@ -16,7 +16,6 @@ class ConnectivityHelper(private val context: Context) {
      * Verifica si hay una conexión a Internet disponible
      */
     fun isInternetAvailable(): Boolean {
-        // Fix: Use ConnectivityManager from Android, not our ConnectivityHelper
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
         val network = connectivityManager?.activeNetwork ?: return false
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false

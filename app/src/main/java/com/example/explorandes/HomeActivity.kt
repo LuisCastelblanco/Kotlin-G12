@@ -354,15 +354,25 @@ class HomeActivity : BaseActivity() {
         }
         buildingsRecyclerView.adapter = buildingAdapter
 
+        // Configuración mejorada del RecyclerView de eventos
         eventsRecyclerView = findViewById(R.id.events_recycler)
         eventsRecyclerView.layoutManager =
             LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        
+        // Verificación de que el RecyclerView existe
+        Log.d("HomeActivity", "Events RecyclerView initialized: ${eventsRecyclerView != null}")
+        
         eventAdapter = EventAdapter { event ->
             val intent = Intent(this, EventDetailActivity::class.java)
             intent.putExtra("EVENT", event)
             startActivity(intent)
         }
+        
+        // Verificación de que el adaptador se crea correctamente
+        Log.d("HomeActivity", "EventAdapter created successfully")
+        
         eventsRecyclerView.adapter = eventAdapter
+        Log.d("HomeActivity", "EventAdapter set to RecyclerView")
     }
 
     private fun setupBottomNavigation() {

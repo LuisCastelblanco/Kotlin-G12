@@ -1,6 +1,7 @@
 package com.example.explorandes.adapters
 
 import android.graphics.drawable.Drawable
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,10 +30,7 @@ class EventAdapter(
         return EventViewHolder(binding)
     }
 
-    override fun onBindViewHolder(holder: EventViewHolder, position: Int) {
-        val event = getItem(position)
-        holder.bind(event)
-    }
+
 
     inner class EventViewHolder(
         private val binding: ItemEventBinding
@@ -137,6 +135,16 @@ class EventAdapter(
                 }
             }
         }
+    }
+    override fun submitList(list: List<Event>?) {
+        Log.d("EventAdapter", "submitList called with ${list?.size ?: 0} items")
+        super.submitList(list)
+    }
+
+    override fun onBindViewHolder(holder: EventViewHolder, position: Int) {
+        val event = getItem(position)
+        Log.d("EventAdapter", "Binding event at position $position: ${event.title}")
+        holder.bind(event)
     }
 
     class EventDiffCallback : DiffUtil.ItemCallback<Event>() {

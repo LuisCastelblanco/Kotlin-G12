@@ -22,7 +22,7 @@ import com.example.explorandes.database.typeconverters.DateConverter
         EventEntity::class,
         EventDetailEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(DateConverter::class)

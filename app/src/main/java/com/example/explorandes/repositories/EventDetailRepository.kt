@@ -1,13 +1,12 @@
 package com.example.explorandes.repositories
 
 import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.util.Log
 import com.example.explorandes.api.ApiClient
 import com.example.explorandes.database.AppDatabase
 import com.example.explorandes.database.entity.EventDetailEntity
 import com.example.explorandes.models.EventDetail
+import com.example.explorandes.utils.ConnectivityHelper
 import com.example.explorandes.utils.NetworkResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -16,19 +15,16 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
-import javax.inject.Inject
 
 class EventDetailRepository(private val context: Context) {
     
     private val db = AppDatabase.getInstance(context)
     private val eventDetailDao = db.eventDetailDao()
+    private val connectivityHelper = ConnectivityHelper(context)
     
     // Verificar si hay conexión a internet
-    private fun isNetworkAvailable(): Boolean {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val network = connectivityManager.activeNetwork ?: return false
-        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
-        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    fun isNetworkAvailable(): Boolean {
+        return connectivityHelper.isInternetAvailable()
     }
     
     // Obtener detalle del evento con manejo de caché
@@ -64,14 +60,18 @@ class EventDetailRepository(private val context: Context) {
                             locationId = eventFromNetwork.locationId,
                             locationName = eventFromNetwork.locationName,
                             // Aquí podrías agregar más detalles específicos que vengan del API
-                            organizerName = null, // Suponiendo que estos datos no vienen en la respuesta básica
+                            organizerName = null,
                             capacity = null,
                             registrationUrl = null,
                             additionalInfo = null
                         )
                         
-                        // Guardar en caché
-                        eventDetailDao.insertEventDetail(EventDetailEntity.fromModel(eventDetail))
+                        // Guardar en caché con estado de sincronización "synced"
+                        val entity = EventDetailEntity.fromModel(eventDetail).copy(
+                            lastSyncStatus = "synced",
+                            lastUpdated = LocalDateTime.now()
+                        )
+                        eventDetailDao.insertEventDetail(entity)
                         
                         // Emitir los nuevos datos
                         emit(NetworkResult.Success(eventDetail))
@@ -85,11 +85,17 @@ class EventDetailRepository(private val context: Context) {
                     // Si hay error de red pero tenemos caché, no emitimos error
                     if (cachedDetail == null) {
                         emit(NetworkResult.Error("Error de red: ${e.localizedMessage}"))
+                    } else {
+                        // Si tenemos caché pero hubo un error de red, indicamos que los datos son de caché
+                        emit(NetworkResult.Error("Mostrando datos almacenados localmente", cachedDetail.toModel()))
                     }
                 }
             } else {
-                // Si no hay internet y no hay caché, emitir error
-                if (cachedDetail == null) {
+                // Si no hay internet y tenemos caché, indicamos que los datos son de caché
+                if (cachedDetail != null) {
+                    emit(NetworkResult.Error("Sin conexión. Mostrando datos almacenados localmente", cachedDetail.toModel()))
+                } else {
+                    // Si no hay internet y no hay caché, emitir error
                     emit(NetworkResult.Error("No hay conexión a Internet y no hay datos en caché"))
                 }
             }
@@ -108,42 +114,65 @@ class EventDetailRepository(private val context: Context) {
     // Guardar cambios locales y marcarlos para sincronización
     suspend fun saveEventDetail(eventDetail: EventDetail) {
         withContext(Dispatchers.IO) {
+            val syncStatus = if (isNetworkAvailable()) {
+                try {
+                    // Intentar sincronizar inmediatamente si hay conexión
+                    // (simplificado aquí - en un caso real enviarías al backend)
+                    Log.d("EventDetailRepository", "Sincronizando evento en tiempo real: ${eventDetail.id}")
+                    "synced"
+                } catch (e: Exception) {
+                    Log.e("EventDetailRepository", "Error al sincronizar: ${e.message}")
+                    "sync_error"
+                }
+            } else {
+                // Marcar para sincronización posterior si no hay conexión
+                Log.d("EventDetailRepository", "Marcando evento para sincronización posterior: ${eventDetail.id}")
+                "pending_sync"
+            }
+            
             val entity = EventDetailEntity.fromModel(eventDetail).copy(
-                lastSyncStatus = if (isNetworkAvailable()) "synced" else "pending_sync"
+                lastSyncStatus = syncStatus,
+                lastUpdated = LocalDateTime.now()
             )
             eventDetailDao.insertEventDetail(entity)
-            
-            // Si hay conexión, sincronizar inmediatamente
-            if (isNetworkAvailable()) {
-                syncEventDetail(entity)
-            }
         }
     }
     
     // Sincronizar eventos pendientes
-    suspend fun syncPendingEvents() {
-        withContext(Dispatchers.IO) {
-            if (!isNetworkAvailable()) return@withContext
+    suspend fun syncPendingEvents(): List<Long> {
+        return withContext(Dispatchers.IO) {
+            if (!isNetworkAvailable()) return@withContext emptyList()
             
             val pendingEvents = eventDetailDao.getPendingSyncEventDetails()
+            val syncedEventIds = mutableListOf<Long>()
+            
             for (event in pendingEvents) {
-                syncEventDetail(event)
+                try {
+                    // Simulamos una sincronización exitosa con el backend
+                    // En un caso real, aquí enviarías los datos al servidor
+                    Log.d("EventDetailRepository", "Sincronizando evento pendiente: ${event.id}")
+                    
+                    // Actualizar el estado de sincronización a "synced"
+                    eventDetailDao.updateSyncStatus(event.id, "synced")
+                    syncedEventIds.add(event.id)
+                    
+                    Log.d("EventDetailRepository", "Evento sincronizado: ${event.id}")
+                } catch (e: Exception) {
+                    Log.e("EventDetailRepository", "Error sincronizando evento: ${e.localizedMessage}")
+                    eventDetailDao.updateSyncStatus(event.id, "sync_error")
+                }
             }
+            
+            return@withContext syncedEventIds
         }
     }
     
-    // Sincronizar un evento específico con el servidor
-    private suspend fun syncEventDetail(eventDetailEntity: EventDetailEntity) {
-        if (!isNetworkAvailable()) return
-        
-        try {
-   
-            eventDetailDao.updateSyncStatus(eventDetailEntity.id, "synced")
+    // Configurar un listener para detectar cambios en la conectividad
+    fun setupConnectivityListener(onConnectivityChanged: (Boolean) -> Unit) {
+        connectivityHelper.addConnectivityListener { isConnected ->
+            onConnectivityChanged(isConnected)
             
-            Log.d("EventDetailRepository", "Evento sincronizado: ${eventDetailEntity.id}")
-        } catch (e: Exception) {
-            Log.e("EventDetailRepository", "Error sincronizando evento: ${e.localizedMessage}")
-            eventDetailDao.updateSyncStatus(eventDetailEntity.id, "sync_error")
+
         }
     }
 }

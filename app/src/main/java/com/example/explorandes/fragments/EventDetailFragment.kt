@@ -15,6 +15,7 @@ import com.bumptech.glide.Glide
 import com.example.explorandes.R
 import com.example.explorandes.databinding.FragmentEventDetailBinding
 import com.example.explorandes.models.EventDetail
+import com.example.explorandes.database.entity.EventDetailEntity
 import com.example.explorandes.utils.NetworkResult
 import com.example.explorandes.viewmodels.EventDetailViewModel
 import com.example.explorandes.viewmodels.EventViewModel
@@ -22,6 +23,9 @@ import com.google.android.material.snackbar.Snackbar
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import com.example.explorandes.utils.ConnectivityHelper
+
+
 
 class EventDetailFragment : Fragment() {
 
@@ -76,11 +80,58 @@ class EventDetailFragment : Fragment() {
                 }
             }
         }
+        viewModel.isConnected.observe(viewLifecycleOwner) { isConnected ->
+            if (!isConnected) {
+                Snackbar.make(
+                    binding.root,
+                    "Sin conexión. Mostrando datos almacenados localmente.",
+                    Snackbar.LENGTH_LONG
+                ).setAction("Reintentar") {
+                    viewModel.checkConnectivity()
+                }.show()
+            }
+        }
         
-        // Verificar si hay eventos pendientes de sincronización
-        viewModel.checkConnectivity()
-        if (viewModel.isConnected.value == true) {
-            viewModel.syncPendingEvents()
+        // Observar estado de sincronización
+        viewModel.syncStatus.observe(viewLifecycleOwner) { status ->
+            when (status) {
+                "pending_sync" -> {
+                    Snackbar.make(
+                        binding.root,
+                        "Cambios guardados localmente, pendientes de sincronización",
+                        Snackbar.LENGTH_LONG
+                    ).setAction("Sincronizar") {
+                        if (viewModel.checkConnectivity()) {
+                            viewModel.syncPendingEvents()
+                        }
+                    }.show()
+                }
+                "synced" -> {
+                    Snackbar.make(
+                        binding.root,
+                        "Cambios sincronizados correctamente",
+                        Snackbar.LENGTH_SHORT
+                    ).show()
+                }
+                "sync_error" -> {
+                    Snackbar.make(
+                        binding.root,
+                        "Error al sincronizar cambios",
+                        Snackbar.LENGTH_LONG
+                    ).setAction("Reintentar") {
+                        if (viewModel.checkConnectivity()) {
+                            viewModel.syncPendingEvents()
+                        }
+                    }.show()
+                }
+                "sync_completed" -> {
+                    Snackbar.make(
+                        binding.root,
+                        "Sincronización completada",
+                        Snackbar.LENGTH_SHORT
+                    ).show()
+                }
+            }
         }
     }
     

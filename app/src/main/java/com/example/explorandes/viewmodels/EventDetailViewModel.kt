@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.explorandes.database.entity.EventDetailEntity
 import com.example.explorandes.models.EventDetail
 import com.example.explorandes.repositories.EventDetailRepository
 import com.example.explorandes.utils.ConnectivityHelper
@@ -29,6 +30,7 @@ class EventDetailViewModel(private val context: Context) : ViewModel() {
 
     init {
         checkConnectivity()
+        setupConnectivityMonitoring()
     }
 
     fun checkConnectivity(): Boolean {
@@ -36,11 +38,38 @@ class EventDetailViewModel(private val context: Context) : ViewModel() {
         _isConnected.value = isAvailable
         return isAvailable
     }
+    
+    private fun setupConnectivityMonitoring() {
+        repository.setupConnectivityListener { isConnected ->
+            _isConnected.postValue(isConnected)
+            
+            // Si recuperamos la conexión, intentar sincronizar eventos pendientes
+            if (isConnected) {
+                syncPendingEvents()
+            }
+        }
+    }
 
     fun loadEventDetail(eventId: Long) {
         viewModelScope.launch {
             repository.getEventDetail(eventId).collectLatest { result ->
                 _eventDetail.value = result
+                
+                // Si la carga fue exitosa, verificar si hay cambios pendientes
+                if (result is NetworkResult.Success) {
+                    // Verificar el estado de sincronización
+                    checkPendingSyncStatus(eventId)
+                }
+            }
+        }
+    }
+
+    private fun checkPendingSyncStatus(eventId: Long) {
+        viewModelScope.launch {
+            // Verificar si hay eventos pendientes de sincronización
+            val pendingEvents = repository.syncPendingEvents()
+            if (pendingEvents.contains(eventId)) {
+                _syncStatus.value = "pending_sync"
             }
         }
     }
@@ -48,16 +77,37 @@ class EventDetailViewModel(private val context: Context) : ViewModel() {
     fun saveEventDetail(eventDetail: EventDetail) {
         viewModelScope.launch {
             repository.saveEventDetail(eventDetail)
+            
+            // Actualizar el estado de sincronización basado en la conectividad
             _syncStatus.value = if (isConnected.value == true) "synced" else "pending_sync"
+            
+            // Si estamos conectados, intentar sincronizar inmediatamente
+            if (isConnected.value == true) {
+                syncPendingEvents()
+            }
         }
     }
 
     fun syncPendingEvents() {
-        if (!isConnected.value!!) return
+        if (!isConnected.value!!) {
+            _syncStatus.value = "pending_sync"
+            return
+        }
         
         viewModelScope.launch {
-            repository.syncPendingEvents()
-            _syncStatus.value = "sync_completed"
+            _syncStatus.value = "syncing"
+            
+            try {
+                val syncedEventIds = repository.syncPendingEvents()
+                
+                if (syncedEventIds.isNotEmpty()) {
+                    _syncStatus.value = "sync_completed"
+                } else {
+                    _syncStatus.value = "synced" // No había eventos pendientes
+                }
+            } catch (e: Exception) {
+                _syncStatus.value = "sync_error"
+            }
         }
     }
 

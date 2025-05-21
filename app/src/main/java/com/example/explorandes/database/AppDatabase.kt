@@ -7,8 +7,10 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.example.explorandes.database.dao.BuildingDao
 import com.example.explorandes.database.dao.EventDao
+import com.example.explorandes.database.dao.EventDetailDao
 import com.example.explorandes.database.dao.PlaceDao
 import com.example.explorandes.database.entity.BuildingEntity
+import com.example.explorandes.database.entity.EventDetailEntity
 import com.example.explorandes.database.entity.EventEntity
 import com.example.explorandes.database.entity.PlaceEntity
 import com.example.explorandes.database.typeconverters.DateConverter
@@ -17,7 +19,8 @@ import com.example.explorandes.database.typeconverters.DateConverter
     entities = [
         BuildingEntity::class,
         PlaceEntity::class,
-        EventEntity::class
+        EventEntity::class,
+        EventDetailEntity::class
     ],
     version = 1,
     exportSchema = false
@@ -28,6 +31,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun buildingDao(): BuildingDao
     abstract fun placeDao(): PlaceDao
     abstract fun eventDao(): EventDao
+    abstract fun eventDetailDao(): EventDetailDao
 
     companion object {
         private const val DATABASE_NAME = "explorandes_db"

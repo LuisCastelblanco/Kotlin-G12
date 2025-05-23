@@ -1,19 +1,22 @@
 package com.example.explorandes.ui.navigation
 
+import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.explorandes.models.Category
 import com.example.explorandes.models.Place
 import com.example.explorandes.repositories.BuildingRepository
 import com.example.explorandes.repositories.PlaceRepository
 import kotlinx.coroutines.launch
+import com.example.explorandes.utils.ConnectivityHelper
 
-class NavigationViewModel : ViewModel() {
+class NavigationViewModel(private val context: Context) : ViewModel() {
 
-    private val buildingRepository = BuildingRepository()
-    private val placeRepository = PlaceRepository()
+    private val buildingRepository = BuildingRepository(context)
+    private val placeRepository = PlaceRepository(context)
 
     private val _places = MutableLiveData<List<Place>>()
     val places: LiveData<List<Place>> = _places
@@ -29,10 +32,22 @@ class NavigationViewModel : ViewModel() {
 
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
+    
+    // Add connectivity status LiveData
+    private val _isConnected = MutableLiveData<Boolean>()
+    val isConnected: LiveData<Boolean> = _isConnected
 
     init {
         loadCategories()
         loadPlaces()
+        checkConnectivity()
+    }
+    
+    fun checkConnectivity(): Boolean {
+        val connectivityHelper = ConnectivityHelper(context)
+        val isAvailable = connectivityHelper.isInternetAvailable()
+        _isConnected.value = isAvailable
+        return isAvailable
     }
 
     private fun loadCategories() {
@@ -124,6 +139,17 @@ class NavigationViewModel : ViewModel() {
             } finally {
                 _isLoading.value = false
             }
+        }
+    }
+    
+    // Factory class to create NavigationViewModel instances with context
+    class Factory(private val context: Context) : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(NavigationViewModel::class.java)) {
+                return NavigationViewModel(context) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
         }
     }
 }

@@ -7,37 +7,54 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.RequestOptions
 import com.example.explorandes.R
 import com.example.explorandes.databinding.ItemEventBinding
 import com.example.explorandes.models.Event
+import com.example.explorandes.models.EventDetail
+import com.example.explorandes.utils.VisitedEventsManager
 
 class EventAdapter(
     private val onEventClick: (Event) -> Unit
 ) : ListAdapter<Event, EventAdapter.EventViewHolder>(EventDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EventViewHolder {
-        val binding = ItemEventBinding.inflate(
-            LayoutInflater.from(parent.context),
-            parent,
-            false
-        )
+        val binding = ItemEventBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return EventViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: EventViewHolder, position: Int) {
-        val event = getItem(position)
-        holder.bind(event)
+        holder.bind(getItem(position))
     }
 
-    inner class EventViewHolder(
-        private val binding: ItemEventBinding
-    ) : RecyclerView.ViewHolder(binding.root) {
+    inner class EventViewHolder(private val binding: ItemEventBinding) :
+        RecyclerView.ViewHolder(binding.root) {
 
         init {
             binding.root.setOnClickListener {
                 val position = bindingAdapterPosition
                 if (position != RecyclerView.NO_POSITION) {
-                    onEventClick(getItem(position))
+                    val clickedEvent = getItem(position)
+                    onEventClick(clickedEvent)
+
+                    // Guardar en historial en memoria
+                    val eventDetail = EventDetail(
+                        id = clickedEvent.id,
+                        title = clickedEvent.title,
+                        description = clickedEvent.description,
+                        startTime = clickedEvent.startTime,
+                        endTime = clickedEvent.endTime,
+                        locationId = clickedEvent.locationId,
+                        locationName = clickedEvent.locationName,
+                        organizerName = null,
+                        imageUrl = clickedEvent.imageUrl,
+                        capacity = null,
+                        registrationUrl = null,
+                        type = clickedEvent.type,
+                        additionalInfo = null
+                    )
+                    VisitedEventsManager.addEvent(eventDetail, true)
                 }
             }
         }
@@ -48,7 +65,6 @@ class EventAdapter(
                 tvEventDate.text = event.getFormattedDate()
                 tvEventTime.text = event.getFormattedTimeRange()
 
-                // Set location text if available
                 event.locationName?.let {
                     tvEventLocation.text = it
                     tvEventLocation.visibility = View.VISIBLE
@@ -56,27 +72,20 @@ class EventAdapter(
                     tvEventLocation.visibility = View.GONE
                 }
 
-                // Set event type badge
-                when (event.type) {
-                    Event.TYPE_EVENT -> {
-                        tvEventType.text = "Event"
-                        tvEventType.setBackgroundResource(R.drawable.bg_badge_event)
-                    }
-                    Event.TYPE_MOVIE -> {
-                        tvEventType.text = "Movie"
-                        tvEventType.setBackgroundResource(R.drawable.bg_badge_movie)
-                    }
-                    Event.TYPE_SPORTS -> {
-                        tvEventType.text = "Sports"
-                        tvEventType.setBackgroundResource(R.drawable.bg_badge_sports)
-                    }
-                    else -> {
-                        tvEventType.text = "Event"
-                        tvEventType.setBackgroundResource(R.drawable.bg_badge_event)
-                    }
+                tvEventType.text = when (event.type) {
+                    Event.TYPE_MOVIE -> "Movie"
+                    Event.TYPE_SPORTS -> "Sports"
+                    else -> "Event"
                 }
 
-                // Highlight ongoing events
+                tvEventType.setBackgroundResource(
+                    when (event.type) {
+                        Event.TYPE_MOVIE -> R.drawable.bg_badge_movie
+                        Event.TYPE_SPORTS -> R.drawable.bg_badge_sports
+                        else -> R.drawable.bg_badge_event
+                    }
+                )
+
                 if (event.isHappeningNow()) {
                     cardEvent.strokeWidth = 2
                     cardEvent.strokeColor = root.context.getColor(R.color.colorAccent)
@@ -86,15 +95,19 @@ class EventAdapter(
                     tvNowPlaying.visibility = View.GONE
                 }
 
-                // Load event image
-                event.imageUrl?.let { url ->
+                val imageUrl = event.imageUrl
+                if (!imageUrl.isNullOrEmpty()) {
                     Glide.with(ivEventImage.context)
-                        .load(url)
-                        .placeholder(R.drawable.placeholder_event)
-                        .error(R.drawable.placeholder_event)
-                        .centerCrop()
+                        .load(imageUrl)
+                        .apply(
+                            RequestOptions()
+                                .placeholder(R.drawable.placeholder_event)
+                                .error(R.drawable.placeholder_event)
+                                .centerCrop()
+                                .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                        )
                         .into(ivEventImage)
-                } ?: run {
+                } else {
                     ivEventImage.setImageResource(R.drawable.placeholder_event)
                 }
             }
@@ -102,12 +115,10 @@ class EventAdapter(
     }
 
     class EventDiffCallback : DiffUtil.ItemCallback<Event>() {
-        override fun areItemsTheSame(oldItem: Event, newItem: Event): Boolean {
-            return oldItem.id == newItem.id
-        }
+        override fun areItemsTheSame(oldItem: Event, newItem: Event): Boolean =
+            oldItem.id == newItem.id
 
-        override fun areContentsTheSame(oldItem: Event, newItem: Event): Boolean {
-            return oldItem == newItem
-        }
+        override fun areContentsTheSame(oldItem: Event, newItem: Event): Boolean =
+            oldItem == newItem
     }
 }

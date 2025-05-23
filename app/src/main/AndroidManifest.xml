@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.example.explorandes">
 
-    <!-- Add necessary permissions for location and maps -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.WRITE_SETTINGS"/>
+    <uses-permission android:name="android.permission.WRITE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
     <application
+        android:name=".ExplorAndesApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -21,7 +23,6 @@
         android:theme="@style/Theme.ExplorAndes"
         android:usesCleartextTraffic="true">
 
-        <!-- Add Google Maps API key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyA8JC9Rq6DveYWY4ylpomY5UOcxrd2qqak" />
@@ -44,7 +45,6 @@
             android:name=".MainActivity"
             android:exported="false" />
 
-        <!-- Add BuildingDetailActivity -->
         <activity
             android:name=".BuildingDetailActivity"
             android:exported="false" />
@@ -54,6 +54,10 @@
             android:exported="false"
             android:label="@string/map"
             android:theme="@style/Theme.ExplorAndes" />
+
+        <activity
+            android:name=".EventDetailActivity"
+            android:exported="false" />
 
     </application>
 

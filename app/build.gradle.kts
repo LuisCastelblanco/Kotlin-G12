@@ -4,6 +4,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"
     id("org.jetbrains.kotlin.plugin.parcelize")
     kotlin("kapt")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -80,6 +81,8 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.44")
     kapt("com.google.dagger:hilt-android-compiler:2.44")
     implementation("androidx.hilt:hilt-navigation-fragment:1.0.0")
+    implementation("androidx.work:work-runtime-ktx:2.8.1")
+
 
     // Glide for image loading
     implementation("com.github.bumptech.glide:glide:4.15.1")
@@ -89,6 +92,8 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.9.1")
+
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
 
     // Gson for JSON parsing
     implementation("com.google.code.gson:gson:2.9.0")
@@ -122,6 +127,9 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.8.0")
     implementation("androidx.fragment:fragment-ktx:1.6.1")
 
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
 
 
     // OkHTTP
@@ -138,4 +146,7 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation(platform("com.google.firebase:firebase-bom:33.12.0"))
+    implementation("com.google.firebase:firebase-analytics")
 }

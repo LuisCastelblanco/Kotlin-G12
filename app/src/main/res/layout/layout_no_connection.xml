@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/no_connection_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:visibility="gone"
+    android:background="@color/background_light_gray">
+
+    <ImageView
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:src="@android:drawable/stat_notify_error"
+        android:contentDescription="No connection" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No internet connection"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Check your connection and try again"
+        android:textSize="14sp"
+        android:layout_marginTop="8dp" />
+    
+    <TextView
+        android:id="@+id/no_connection_message"  
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No internet connection"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp" />
+
+    <Button
+        android:id="@+id/retry_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Retry"
+        android:backgroundTint="@color/colorPrimary" />
+
+</LinearLayout>

@@ -35,82 +35,37 @@
                 <View
                     android:id="@+id/header_background"
                     android:layout_width="match_parent"
-                    android:layout_height="120dp"
+                    android:layout_height="160dp"
                     android:background="@drawable/header_background" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
+                    android:gravity="center"
                     android:padding="16dp">
 
-                    <!-- Greeting and Profile -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:id="@+id/profile_image"
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:layout_marginTop="8dp"
+                        android:src="@drawable/profile_placeholder"
+                        app:civ_border_color="@android:color/white"
+                        app:civ_border_width="2dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground" />
+
+                    <TextView
+                        android:id="@+id/greeting_text"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <TextView
-                            android:id="@+id/greeting_text"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Hi, Juan"
-                            android:textColor="@android:color/white"
-                            android:textSize="24sp"
-                            android:textStyle="bold" />
-
-                        <de.hdodenhof.circleimageview.CircleImageView
-                            android:id="@+id/profile_image"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:src="@drawable/profile_placeholder"
-                            app:civ_border_color="@android:color/white"
-                            app:civ_border_width="2dp" />
-                    </LinearLayout>
-
-                    <!-- Search Bar -->
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        app:cardCornerRadius="24dp"
-                        app:cardElevation="4dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:padding="8dp">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/ic_search"
-                                android:layout_marginStart="8dp"
-                                android:layout_marginEnd="8dp" />
-
-                            <EditText
-                                android:id="@+id/search_input"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:background="@null"
-                                android:hint="Where to go?"
-                                android:padding="8dp"
-                                android:textSize="16sp" />
-
-                            <ImageView
-                                android:id="@+id/filter_button"
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/ic_filter"
-                                android:layout_marginStart="8dp"
-                                android:layout_marginEnd="8dp" />
-                        </LinearLayout>
-                    </androidx.cardview.widget.CardView>
+                        android:layout_marginTop="8dp"
+                        android:text="Hola, Usuario"
+                        android:textColor="@android:color/white"
+                        android:textSize="24sp"
+                        android:textStyle="bold" />
                 </LinearLayout>
             </FrameLayout>
 
@@ -129,34 +84,12 @@
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp">
 
-                    <include layout="@layout/item_category" 
-                        android:id="@+id/category_buildings"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="16dp" />
-
-                    <include layout="@layout/item_category" 
-                        android:id="@+id/category_events"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="16dp" />
-
-                    <include layout="@layout/item_category" 
-                        android:id="@+id/category_food"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="16dp" />
-
-                    <include layout="@layout/item_category" 
-                        android:id="@+id/category_study"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="16dp" />
-
-                    <include layout="@layout/item_category" 
-                        android:id="@+id/category_services"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                    <include layout="@layout/item_category" android:id="@+id/category_all"/>
+                    <include layout="@layout/item_category" android:id="@+id/category_buildings"/>
+                    <include layout="@layout/item_category" android:id="@+id/category_events"/>
+                    <include layout="@layout/item_category" android:id="@+id/category_food"/>
+                    <include layout="@layout/item_category" android:id="@+id/category_study"/>
+                    <include layout="@layout/item_category" android:id="@+id/category_services"/>
                 </LinearLayout>
             </HorizontalScrollView>
 
@@ -206,7 +139,7 @@
                     tools:listitem="@layout/item_building" />
             </LinearLayout>
 
-            <!-- Recommendations Section -->
+            <!-- Events Section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -217,31 +150,23 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginBottom="8dp"
+                    android:gravity="start|center_vertical"
+                    android:orientation="horizontal">
 
                     <TextView
-                        android:layout_width="0dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Recommendations"
+                        android:text="Eventos"
                         android:textSize="18sp"
                         android:textColor="@android:color/black"
                         android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/see_all_recommendations"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="See all"
-                        android:textColor="@color/colorPrimary"
-                        android:textSize="14sp" />
                 </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/recommendations_recycler"
+                    android:id="@+id/events_recycler"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:clipToPadding="false"
@@ -249,10 +174,51 @@
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                    tools:listitem="@layout/item_recommendation" />
+                    tools:listitem="@layout/item_event" />
             </LinearLayout>
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
+
+    <!-- View que se muestra cuando no hay conexión -->
+    <LinearLayout
+        android:id="@+id/no_connection_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone"
+        android:background="@color/background_light_gray">
+
+        <Button
+        android:id="@+id/retry_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Reintentar"
+        android:backgroundTint="@color/colorPrimary" />
+
+        <ImageView
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@android:drawable/stat_notify_error"
+            android:contentDescription="No connection" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No internet connection"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Check your connection and try again"
+            android:textSize="14sp"
+            android:layout_marginTop="8dp" />
+    </LinearLayout>
 
     <!-- Bottom Navigation -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
@@ -263,4 +229,5 @@
         android:background="@android:color/white"
         app:menu="@menu/bottom_navigation_menu"
         app:labelVisibilityMode="labeled" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -6,105 +6,117 @@
     android:layout_height="match_parent"
     android:background="@color/colorBackground">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/appbar"
+    <!-- Main content container -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/navigation_content"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/colorPrimary"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:layout_height="match_parent">
 
-        <Button
-            android:id="@+id/view_map_button"
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/colorPrimary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <Button
+                android:id="@+id/view_map_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Ver Mapa"
+                android:layout_margin="16dp"
+                android:backgroundTint="@color/colorPrimary"
+                android:textColor="@android:color/white" />
+
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                app:title="@string/navigation"
+                app:titleTextColor="@android:color/white" />
+
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <SearchView
+            android:id="@+id/search_view"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Ver Mapa"
             android:layout_margin="16dp"
-            app:layout_constraintStart_toStartOf="parent"
+            android:background="@drawable/search_background"
+            android:iconifiedByDefault="false"
+            android:queryBackground="@android:color/transparent"
+            android:queryHint="@string/search_places"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/appbar"
-            android:backgroundTint="@color/colorPrimary"
-            android:textColor="@android:color/white" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/appbar" />
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/categories_recyclerview"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:clipToPadding="false"
+            android:orientation="horizontal"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
-            app:title="@string/navigation"
-            app:titleTextColor="@android:color/white" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/search_view"
+            tools:itemCount="5"
+            tools:listitem="@layout/item_category" />
 
-    </com.google.android.material.appbar.AppBarLayout>
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/places_recyclerview"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginTop="8dp"
+            android:clipToPadding="false"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="16dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/categories_recyclerview"
+            tools:itemCount="5"
+            tools:listitem="@layout/item_place" />
 
-    <SearchView
-        android:id="@+id/search_view"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:background="@drawable/search_background"
-        android:iconifiedByDefault="false"
-        android:queryBackground="@android:color/transparent"
-        android:queryHint="@string/search_places"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/view_map_button" />
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/progress_indicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:indeterminate="true"
+            android:visibility="gone"
+            app:indicatorColor="@color/colorPrimary"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/categories_recyclerview" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/categories_recyclerview"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:clipToPadding="false"
-        android:orientation="horizontal"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/search_view"
-        tools:itemCount="5"
-        tools:listitem="@layout/item_category" />
+        <TextView
+            android:id="@+id/empty_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/no_places_found"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+            android:textColor="@color/colorTextSecondary"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/categories_recyclerview" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/places_recyclerview"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="8dp"
-        android:clipToPadding="false"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/categories_recyclerview"
-        tools:itemCount="5"
-        tools:listitem="@layout/item_place" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <com.google.android.material.progressindicator.CircularProgressIndicator
-        android:id="@+id/progress_indicator"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:indeterminate="true"
-        android:visibility="gone"
-        app:indicatorColor="@color/colorPrimary"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/categories_recyclerview" />
-
-    <TextView
-        android:id="@+id/empty_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/no_places_found"
-        android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
-        android:textColor="@color/colorTextSecondary"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/categories_recyclerview" />
+    <include
+        android:id="@+id/no_connection_view"
+        layout="@layout/layout_no_connection"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

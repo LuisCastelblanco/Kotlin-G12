@@ -8,10 +8,10 @@ import android.util.Log
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import com.example.explorandes.utils.SessionManager
 
-class SplashActivity : AppCompatActivity() {
+// Change from AppCompatActivity to BaseActivity
+class SplashActivity : BaseActivity() {
 
     private val splashTimeOut: Long = 2000 // 2 seconds
     private lateinit var sessionManager: SessionManager

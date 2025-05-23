@@ -3,6 +3,7 @@ package com.example.explorandes.fragments
 import android.content.Intent
 import android.os.Bundle
 import android.provider.CalendarContract
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,17 +16,16 @@ import com.bumptech.glide.Glide
 import com.example.explorandes.R
 import com.example.explorandes.databinding.FragmentEventDetailBinding
 import com.example.explorandes.models.EventDetail
-import com.example.explorandes.database.entity.EventDetailEntity
 import com.example.explorandes.utils.NetworkResult
+import com.example.explorandes.utils.ConnectivityHelper
+import com.example.explorandes.utils.VisitedEventsManager
 import com.example.explorandes.viewmodels.EventDetailViewModel
 import com.example.explorandes.viewmodels.EventViewModel
+
 import com.google.android.material.snackbar.Snackbar
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import com.example.explorandes.utils.ConnectivityHelper
-
-
 
 class EventDetailFragment : Fragment() {
 
@@ -34,18 +34,12 @@ class EventDetailFragment : Fragment() {
 
     private lateinit var viewModel: EventDetailViewModel
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
-    
     private var eventId: Long = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        arguments?.let { eventId = it.getLong("eventId", -1) }
 
-        // Obtener ID del evento de los argumentos
-        arguments?.let {
-            eventId = it.getLong("eventId", -1)
-        }
-
-        // Inicializar ViewModel
         viewModel = ViewModelProvider(
             this,
             EventDetailViewModel.Factory(requireContext())
@@ -66,128 +60,45 @@ class EventDetailFragment : Fragment() {
 
         setupUI()
         setupObservers()
-        
-        // Cargar datos del evento
-        if (eventId != -1L) {
-            viewModel.loadEventDetail(eventId)
-        } else {
-            // Si no hay ID, buscar evento seleccionado en ViewModel compartido
-            val sharedViewModel = ViewModelProvider(requireActivity())[EventViewModel::class.java]
-            sharedViewModel.selectedEvent.observe(viewLifecycleOwner) { event ->
-                if (event != null) {
-                    eventId = event.id
-                    viewModel.loadEventDetail(eventId)
-                }
-            }
+
+        val sharedViewModel = ViewModelProvider(requireActivity())[EventViewModel::class.java]
+        sharedViewModel.selectedEvent.value?.let {
+            eventId = it.id
         }
-        viewModel.isConnected.observe(viewLifecycleOwner) { isConnected ->
-            if (!isConnected) {
-                Snackbar.make(
-                    binding.root,
-                    "Sin conexión. Mostrando datos almacenados localmente.",
-                    Snackbar.LENGTH_LONG
-                ).setAction("Reintentar") {
-                    viewModel.checkConnectivity()
-                }.show()
-            }
-        }
-        
-        // Observar estado de sincronización
-        viewModel.syncStatus.observe(viewLifecycleOwner) { status ->
-            when (status) {
-                "pending_sync" -> {
-                    Snackbar.make(
-                        binding.root,
-                        "Cambios guardados localmente, pendientes de sincronización",
-                        Snackbar.LENGTH_LONG
-                    ).setAction("Sincronizar") {
-                        if (viewModel.checkConnectivity()) {
-                            viewModel.syncPendingEvents()
-                        }
-                    }.show()
-                }
-                "synced" -> {
-                    Snackbar.make(
-                        binding.root,
-                        "Cambios sincronizados correctamente",
-                        Snackbar.LENGTH_SHORT
-                    ).show()
-                }
-                "sync_error" -> {
-                    Snackbar.make(
-                        binding.root,
-                        "Error al sincronizar cambios",
-                        Snackbar.LENGTH_LONG
-                    ).setAction("Reintentar") {
-                        if (viewModel.checkConnectivity()) {
-                            viewModel.syncPendingEvents()
-                        }
-                    }.show()
-                }
-                "sync_completed" -> {
-                    Snackbar.make(
-                        binding.root,
-                        "Sincronización completada",
-                        Snackbar.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
+        if (eventId != -1L) viewModel.loadEventDetail(eventId)
     }
-    
+
     private fun setupUI() {
-        // Configurar toolbar
         binding.toolbar.setNavigationOnClickListener {
             findNavController().navigateUp()
         }
-        
-        // Configurar SwipeRefresh
+
         swipeRefreshLayout = binding.swipeRefreshLayout
         swipeRefreshLayout.setOnRefreshListener {
             if (eventId != -1L) {
                 viewModel.loadEventDetail(eventId)
             }
         }
-        
-        // Botón de compartir
+
         binding.fabShare.setOnClickListener {
             val eventDetail = (viewModel.eventDetail.value as? NetworkResult.Success)?.data
             eventDetail?.let { shareEvent(it) }
         }
-        
-        // Botón de agregar al calendario
+
         binding.fabAddToCalendar.setOnClickListener {
             val eventDetail = (viewModel.eventDetail.value as? NetworkResult.Success)?.data
             eventDetail?.let { addEventToCalendar(it) }
         }
-        
-        // Mostrar ubicación
+
         binding.locationLayout.setOnClickListener {
             val eventDetail = (viewModel.eventDetail.value as? NetworkResult.Success)?.data
-            eventDetail?.locationId?.let { locationId ->
-                navigateToLocation(locationId)
-            }
+            eventDetail?.locationId?.let { navigateToLocation(it) }
         }
     }
-    
+
     private fun setupObservers() {
-        // Observar estado de conectividad
-        viewModel.isConnected.observe(viewLifecycleOwner) { isConnected ->
-            if (!isConnected) {
-                Snackbar.make(
-                    binding.root,
-                    "Sin conexión. Mostrando datos almacenados localmente.",
-                    Snackbar.LENGTH_LONG
-                ).setAction("Reintentar") {
-                    viewModel.checkConnectivity()
-                }.show()
-            }
-        }
-        
-        // Observar datos del evento
         viewModel.eventDetail.observe(viewLifecycleOwner) { result ->
             swipeRefreshLayout.isRefreshing = false
-            
             when (result) {
                 is NetworkResult.Success -> {
                     binding.progressBar.visibility = View.GONE
@@ -195,64 +106,38 @@ class EventDetailFragment : Fragment() {
                 }
                 is NetworkResult.Error -> {
                     binding.progressBar.visibility = View.GONE
-                    if (result.data != null) {
-                        // Tenemos datos en caché pero hubo error al actualizar
-                        updateUI(result.data)
-                        Snackbar.make(
-                            binding.root,
-                            "Error al actualizar: ${result.message}",
-                            Snackbar.LENGTH_LONG
-                        ).show()
-                    } else {
-                        // No hay datos en caché ni se pudo cargar de la red
-                        showErrorView(result.message ?: "Error desconocido")
-                    }
+                    result.data?.let {
+                        updateUI(it)
+                        Snackbar.make(binding.root, "Error al actualizar: ${result.message}", Snackbar.LENGTH_LONG).show()
+                    } ?: showErrorView(result.message ?: "Error desconocido")
                 }
-                is NetworkResult.Loading -> {
-                    binding.progressBar.visibility = View.VISIBLE
-                }
+                is NetworkResult.Loading -> binding.progressBar.visibility = View.VISIBLE
             }
         }
-        
-        // Observar estado de sincronización
+
+        viewModel.isConnected.observe(viewLifecycleOwner) { isConnected ->
+            if (!isConnected) {
+                Snackbar.make(
+                    binding.root,
+                    "Sin conexión. Mostrando datos almacenados localmente.",
+                    Snackbar.LENGTH_LONG
+                ).setAction("Reintentar") { viewModel.checkConnectivity() }.show()
+            }
+        }
+
         viewModel.syncStatus.observe(viewLifecycleOwner) { status ->
             when (status) {
-                "pending_sync" -> {
-                    Snackbar.make(
-                        binding.root,
-                        "Cambios guardados localmente, pendientes de sincronización",
-                        Snackbar.LENGTH_LONG
-                    ).setAction("Sincronizar") {
-                        if (viewModel.checkConnectivity()) {
-                            viewModel.syncPendingEvents()
-                        }
-                    }.show()
-                }
-                "synced" -> {
-                    Snackbar.make(
-                        binding.root,
-                        "Cambios sincronizados correctamente",
-                        Snackbar.LENGTH_SHORT
-                    ).show()
-                }
-                "sync_error" -> {
-                    Snackbar.make(
-                        binding.root,
-                        "Error al sincronizar cambios",
-                        Snackbar.LENGTH_LONG
-                    ).setAction("Reintentar") {
-                        if (viewModel.checkConnectivity()) {
-                            viewModel.syncPendingEvents()
-                        }
-                    }.show()
-                }
-                "sync_completed" -> {
-                    Snackbar.make(
-                        binding.root,
-                        "Sincronización completada",
-                        Snackbar.LENGTH_SHORT
-                    ).show()
-                }
+                "pending_sync" -> Snackbar.make(
+                    binding.root,
+                    "Cambios guardados localmente, pendientes de sincronización",
+                    Snackbar.LENGTH_LONG
+                ).setAction("Sincronizar") { if (viewModel.checkConnectivity()) viewModel.syncPendingEvents() }.show()
+
+                "synced" -> Snackbar.make(binding.root, "Cambios sincronizados correctamente", Snackbar.LENGTH_SHORT).show()
+                "sync_error" -> Snackbar.make(binding.root, "Error al sincronizar cambios", Snackbar.LENGTH_LONG)
+                    .setAction("Reintentar") { if (viewModel.checkConnectivity()) viewModel.syncPendingEvents() }.show()
+
+                "sync_completed" -> Snackbar.make(binding.root, "Sincronización completada", Snackbar.LENGTH_SHORT).show()
             }
         }
     }
@@ -260,142 +145,70 @@ class EventDetailFragment : Fragment() {
     private fun updateUI(eventDetail: EventDetail) {
         binding.apply {
             toolbarLayout.title = eventDetail.title
+            Glide.with(requireContext())
+                .load(eventDetail.imageUrl ?: R.drawable.placeholder_event)
+                .placeholder(R.drawable.placeholder_event)
+                .error(R.drawable.placeholder_event)
+                .centerCrop()
+                .into(eventImage)
 
-            // Cargar imagen del evento
-            eventDetail.imageUrl?.let { url ->
-                Glide.with(requireContext())
-                    .load(url)
-                    .placeholder(R.drawable.placeholder_event)
-                    .error(R.drawable.placeholder_event)
-                    .centerCrop()
-                    .into(eventImage)
-            } ?: run {
-                eventImage.setImageResource(R.drawable.placeholder_event)
-            }
+            tvDescription.text = eventDetail.description.orEmpty()
+            tvDescription.visibility = if (eventDetail.description.isNullOrBlank()) View.GONE else View.VISIBLE
 
-            // Establecer descripción
-            if (!eventDetail.description.isNullOrBlank()) {
-                tvDescription.text = eventDetail.description
-                tvDescription.visibility = View.VISIBLE
-            } else {
-                tvDescription.visibility = View.GONE
-            }
-
-            // Establecer fecha y hora
             tvDate.text = eventDetail.getFormattedDate()
             tvTime.text = eventDetail.getFormattedTimeRange()
+            tvLocation.text = eventDetail.locationName.orEmpty()
+            locationLayout.visibility = if (eventDetail.locationName != null) View.VISIBLE else View.GONE
 
-            // Establecer ubicación si está disponible
-            if (eventDetail.locationName != null) {
-                tvLocation.text = eventDetail.locationName
-                locationLayout.visibility = View.VISIBLE
-            } else {
-                locationLayout.visibility = View.GONE
-            }
+            tvEventType.text = eventDetail.type?.replaceFirstChar { it.uppercase() } ?: "Event"
+            tvEventType.setBackgroundResource(
+                when (eventDetail.type) {
+                    "movies" -> R.drawable.bg_badge_movie
+                    "sports" -> R.drawable.bg_badge_sports
+                    else -> R.drawable.bg_badge_event
+                }
+            )
 
-            // Establecer tipo de evento
-            when (eventDetail.type) {
-                "event" -> {
-                    tvEventType.text = "Event"
-                    tvEventType.setBackgroundResource(R.drawable.bg_badge_event)
-                }
-                "movies" -> {
-                    tvEventType.text = "Movie"
-                    tvEventType.setBackgroundResource(R.drawable.bg_badge_movie)
-                }
-                "sports" -> {
-                    tvEventType.text = "Sports"
-                    tvEventType.setBackgroundResource(R.drawable.bg_badge_sports)
-                }
-                else -> {
-                    tvEventType.text = "Event"
-                    tvEventType.setBackgroundResource(R.drawable.bg_badge_event)
-                }
-            }
-
-            // Resaltar "Now Playing" para eventos en curso
-            if (eventDetail.isHappeningNow()) {
-                tvNowPlaying.visibility = View.VISIBLE
-            } else {
-                tvNowPlaying.visibility = View.GONE
-            }
-
-            // Mostrar "Add to Calendar" solo para eventos futuros
-            if (eventDetail.isUpcoming()) {
-                fabAddToCalendar.visibility = View.VISIBLE
-            } else {
-                fabAddToCalendar.visibility = View.GONE
-            }
-            
-            // Mostrar información adicional si está disponible
-            if (!eventDetail.additionalInfo.isNullOrBlank()) {
-                additionalInfoCard.visibility = View.VISIBLE
-                tvAdditionalInfo.text = eventDetail.additionalInfo
-            } else {
-                additionalInfoCard.visibility = View.GONE
-            }
-            
-            // Mostrar información del organizador si está disponible
-            if (!eventDetail.organizerName.isNullOrBlank()) {
-                organizerLayout.visibility = View.VISIBLE
-                tvOrganizerName.text = eventDetail.organizerName
-            } else {
-                organizerLayout.visibility = View.GONE
-            }
-            
-            // Mostrar capacidad si está disponible
-            if (eventDetail.capacity != null) {
-                capacityLayout.visibility = View.VISIBLE
-                tvCapacity.text = "${eventDetail.capacity} personas"
-            } else {
-                capacityLayout.visibility = View.GONE
-            }
-            
-            // Mostrar URL de registro si está disponible
-            if (!eventDetail.registrationUrl.isNullOrBlank()) {
-                btnRegister.visibility = View.VISIBLE
-                btnRegister.setOnClickListener {
-                    // Aquí se podría abrir el navegador con la URL de registro
-                    Toast.makeText(context, "Regístrate en: ${eventDetail.registrationUrl}", Toast.LENGTH_SHORT).show()
-                }
-            } else {
-                btnRegister.visibility = View.GONE
+            tvNowPlaying.visibility = if (eventDetail.isHappeningNow()) View.VISIBLE else View.GONE
+            fabAddToCalendar.visibility = if (eventDetail.isUpcoming()) View.VISIBLE else View.GONE
+            additionalInfoCard.visibility = if (eventDetail.additionalInfo.isNullOrBlank()) View.GONE else View.VISIBLE
+            tvAdditionalInfo.text = eventDetail.additionalInfo.orEmpty()
+            organizerLayout.visibility = if (eventDetail.organizerName.isNullOrBlank()) View.GONE else View.VISIBLE
+            tvOrganizerName.text = eventDetail.organizerName.orEmpty()
+            capacityLayout.visibility = if (eventDetail.capacity == null) View.GONE else View.VISIBLE
+            tvCapacity.text = "${eventDetail.capacity} personas"
+            btnRegister.visibility = if (eventDetail.registrationUrl.isNullOrBlank()) View.GONE else View.VISIBLE
+            btnRegister.setOnClickListener {
+                Toast.makeText(context, "Regístrate en: ${eventDetail.registrationUrl}", Toast.LENGTH_SHORT).show()
             }
         }
+
+        val isConnected = ConnectivityHelper.getInstance(requireContext()).isConnected(requireContext())
+        VisitedEventsManager.addEvent(eventDetail, isConnected)
+        Log.d("Historial", "Evento insertado en memoria: ${eventDetail.title}")
     }
 
     private fun showErrorView(message: String) {
-        binding.apply {
-            progressBar.visibility = View.GONE
-            errorLayout.visibility = View.VISIBLE
-            // Usando el ID correcto que establecimos en el XML
-            tvErrorMessage.text = message
-
-            btnRetry.setOnClickListener {
-                errorLayout.visibility = View.GONE
-                progressBar.visibility = View.VISIBLE
-                viewModel.loadEventDetail(eventId)
-            }
+        binding.errorLayout.visibility = View.VISIBLE
+        binding.tvErrorMessage.text = message
+        binding.btnRetry.setOnClickListener {
+            binding.errorLayout.visibility = View.GONE
+            binding.progressBar.visibility = View.VISIBLE
+            viewModel.loadEventDetail(eventId)
         }
     }
 
     private fun navigateToLocation(locationId: Long) {
-        val bundle = Bundle().apply {
+        findNavController().navigate(R.id.buildingDetailFragment, Bundle().apply {
             putLong("buildingId", locationId)
-        }
-        findNavController().navigate(R.id.action_eventDetailFragment_to_buildingDetailFragment, bundle)
+        })
     }
 
     private fun addEventToCalendar(eventDetail: EventDetail) {
-        val startMillis = LocalDateTime.parse(
-            eventDetail.startTime,
-            DateTimeFormatter.ISO_DATE_TIME
-        ).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-
-        val endMillis = LocalDateTime.parse(
-            eventDetail.endTime,
-            DateTimeFormatter.ISO_DATE_TIME
-        ).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val startMillis = LocalDateTime.parse(eventDetail.startTime, DateTimeFormatter.ISO_DATE_TIME)
+            .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val endMillis = LocalDateTime.parse(eventDetail.endTime, DateTimeFormatter.ISO_DATE_TIME)
+            .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
         val intent = Intent(Intent.ACTION_INSERT).apply {
             data = CalendarContract.Events.CONTENT_URI
@@ -403,11 +216,8 @@ class EventDetailFragment : Fragment() {
             putExtra(CalendarContract.EXTRA_EVENT_END_TIME, endMillis)
             putExtra(CalendarContract.Events.TITLE, eventDetail.title)
             putExtra(CalendarContract.Events.DESCRIPTION, eventDetail.description)
-            eventDetail.locationName?.let {
-                putExtra(CalendarContract.Events.EVENT_LOCATION, it)
-            }
+            eventDetail.locationName?.let { putExtra(CalendarContract.Events.EVENT_LOCATION, it) }
         }
-
         startActivity(intent)
     }
 
@@ -416,19 +226,16 @@ class EventDetailFragment : Fragment() {
             Event: ${eventDetail.title}
             Date: ${eventDetail.getFormattedDate()}
             Time: ${eventDetail.getFormattedTimeRange()}
-            ${if (eventDetail.locationName != null) "Location: ${eventDetail.locationName}" else ""}
+            ${eventDetail.locationName?.let { "Location: $it" }.orEmpty()}
             
-            ${eventDetail.description ?: ""}
+            ${eventDetail.description.orEmpty()}
         """.trimIndent()
 
-        val sendIntent = Intent().apply {
-            action = Intent.ACTION_SEND
+        val sendIntent = Intent(Intent.ACTION_SEND).apply {
             putExtra(Intent.EXTRA_TEXT, shareText)
             type = "text/plain"
         }
-
-        val shareIntent = Intent.createChooser(sendIntent, "Share Event")
-        startActivity(shareIntent)
+        startActivity(Intent.createChooser(sendIntent, "Share Event"))
     }
 
     override fun onDestroyView() {
